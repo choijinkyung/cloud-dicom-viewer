@@ -1,0 +1,31 @@
+{
+  "name": "@dicom-viewer/web",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "node ../../node_modules/pnpm/bin/pnpm.cjs exec next dev",
+    "build": "node ../../node_modules/pnpm/bin/pnpm.cjs exec next build",
+    "start": "node ../../node_modules/pnpm/bin/pnpm.cjs exec next start",
+    "lint": "node ../../node_modules/pnpm/bin/pnpm.cjs exec tsc -p tsconfig.json --noEmit",
+    "test": "echo \"No tests yet for web\"",
+    "format": "node ../../node_modules/pnpm/bin/pnpm.cjs exec prettier --check ."
+  },
+  "dependencies": {
+    "@cornerstonejs/core": "^4.20.0",
+    "@cornerstonejs/dicom-image-loader": "^4.20.0",
+    "@cornerstonejs/streaming-image-volume-loader": "^1.86.1",
+    "@cornerstonejs/tools": "^4.20.0",
+    "@dicom-viewer/shared": "workspace:*",
+    "dicom-parser": "^1.8.21",
+    "next": "^15.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.2"
+  }
+}
