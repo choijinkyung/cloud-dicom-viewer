@@ -1,0 +1,31 @@
+{
+  "name": "cloud-dicom-web-viewer",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "packageManager": "pnpm@10.8.1",
+  "scripts": {
+    "dev": "npm run dev:web",
+    "dev:web": "npm run dev --workspace @dicom-viewer/web",
+    "dev:api": "npm run dev --workspace @dicom-viewer/api",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "format": "npm run format --workspaces --if-present",
+    "infra:up": "docker compose --env-file .env.example -f infra/docker-compose.local.yml up -d postgres redis minio orthanc hapi-fhir-db hapi-fhir keycloak nextgen-connect",
+    "infra:down": "docker compose --env-file .env.example -f infra/docker-compose.local.yml down",
+    "infra:logs": "docker compose --env-file .env.example -f infra/docker-compose.local.yml logs -f postgres orthanc keycloak",
+    "db:generate": "./node_modules/.bin/pnpm --filter @dicom-viewer/db generate",
+    "db:migrate": "./node_modules/.bin/pnpm --filter @dicom-viewer/db migrate:dev",
+    "db:seed": "./node_modules/.bin/pnpm --filter @dicom-viewer/db seed",
+    "db:setup": "npm run infra:up && npm run db:generate",
+    "db:studio": "./node_modules/.bin/pnpm --filter @dicom-viewer/db studio"
+  },
+  "devDependencies": {
+    "pnpm": "^10.8.1",
+    "turbo": "^2.5.0"
+  }
+}

@@ -1,0 +1,14 @@
+node_modules
+.turbo
+.next
+dist
+coverage
+.env
+.DS_Store
+*.log
+*.tsbuildinfo
+package-lock.json
+pnpm-lock.yaml
+apps/api/dist
+apps/web/.next
+packages/db/generated

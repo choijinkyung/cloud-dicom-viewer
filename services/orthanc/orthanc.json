@@ -1,0 +1,14 @@
+{
+  "Name": "CloudDICOMViewer-Orthanc",
+  "StorageDirectory": "/var/lib/orthanc/db",
+  "AuthenticationEnabled": true,
+  "RemoteAccessAllowed": true,
+  "DicomAet": "DICOMVIEWER",
+  "DicomPort": 4242,
+  "HttpPort": 8042,
+  "Plugins": ["/usr/share/orthanc/plugins/"],
+  "DicomWeb": {
+    "Enable": true,
+    "Root": "/dicom-web/"
+  }
+}
