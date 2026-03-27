@@ -15,7 +15,7 @@
     "@cornerstonejs/dicom-image-loader": "^4.20.0",
     "@cornerstonejs/streaming-image-volume-loader": "^1.86.1",
     "@cornerstonejs/tools": "^4.20.0",
-    "@dicom-viewer/shared": "workspace:*",
+    "@dicom-viewer/shared": "0.1.0",
     "dicom-parser": "^1.8.21",
     "next": "^15.2.0",
     "react": "^19.0.0",

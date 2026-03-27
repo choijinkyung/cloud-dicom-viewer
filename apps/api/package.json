@@ -11,8 +11,8 @@
     "format": "node ../../node_modules/pnpm/bin/pnpm.cjs exec prettier --check ."
   },
   "dependencies": {
-    "@dicom-viewer/db": "workspace:*",
-    "@dicom-viewer/shared": "workspace:*"
+    "@dicom-viewer/db": "0.1.0",
+    "@dicom-viewer/shared": "0.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",
