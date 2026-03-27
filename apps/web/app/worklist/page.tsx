@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { WorklistItem } from "@dicom-viewer/shared";
+import { getInternalApiBaseUrl } from "../../lib/api";
 
 async function getWorklistItems(): Promise<WorklistItem[]> {
-  const response = await fetch("http://localhost:4000/api/worklist", {
+  const response = await fetch(`${getInternalApiBaseUrl()}/api/worklist`, {
     cache: "no-store",
   });
 

@@ -1,4 +1,5 @@
-const orthancUrl = process.env.ORTHANC_URL ?? "http://localhost:8042";
+const orthancHostport = process.env.ORTHANC_HOSTPORT ?? "localhost:8042";
+const orthancUrl = process.env.ORTHANC_URL ?? `http://${orthancHostport}`;
 const orthancUsername = process.env.ORTHANC_USERNAME ?? "orthanc";
 const orthancPassword = process.env.ORTHANC_PASSWORD ?? "orthanc";
 

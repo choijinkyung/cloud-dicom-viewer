@@ -1,0 +1,72 @@
+databases:
+  - name: cloud-dicom-postgres
+    databaseName: dicom_viewer
+    user: dicom_viewer
+    plan: free
+
+services:
+  - name: cloud-dicom-orthanc
+    type: pserv
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./services/orthanc/Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    disk:
+      name: orthanc-data
+      mountPath: /var/lib/orthanc/db
+      sizeGB: 1
+    envVars:
+      - key: ORTHANC__AUTHENTICATION_ENABLED
+        value: "true"
+      - key: ORTHANC__REGISTERED_USERS
+        sync: false
+      - key: ORTHANC__DICOM_WEB__ENABLE
+        value: "true"
+      - key: ORTHANC__DICOM_WEB__ROOT
+        value: /dicom-web/
+
+  - name: cloud-dicom-api
+    type: web
+    runtime: docker
+    plan: free
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "4000"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cloud-dicom-postgres
+          property: connectionString
+      - key: ORTHANC_HOSTPORT
+        fromService:
+          type: pserv
+          name: cloud-dicom-orthanc
+          property: hostport
+      - key: ORTHANC_USERNAME
+        value: orthanc
+      - key: ORTHANC_PASSWORD
+        sync: false
+      - key: WEB_ORIGIN
+        sync: false
+
+  - name: cloud-dicom-web
+    type: web
+    runtime: docker
+    plan: free
+    dockerfilePath: ./apps/web/Dockerfile
+    dockerContext: .
+    envVars:
+      - key: PORT
+        value: "3000"
+      - key: NODE_ENV
+        value: production
+      - key: API_HOSTPORT
+        fromService:
+          type: web
+          name: cloud-dicom-api
+          property: hostport

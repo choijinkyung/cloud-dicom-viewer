@@ -1,17 +1,24 @@
-import { createServer } from "node:http";
+import { createServer, IncomingMessage } from "node:http";
 import { sendJson } from "./lib/http";
 import { handleStudyDetailRoute } from "./routes/studies";
 import { handleWorklistRoute } from "./routes/worklist";
 import { fetchOrthancInstanceFile } from "./services/orthanc-service";
 
 const port = Number(process.env.PORT ?? 4000);
+const defaultWebOrigin = process.env.WEB_ORIGIN ?? "http://localhost:3000";
+
+function getAllowedOrigin(request: IncomingMessage) {
+  return request.headers.origin ?? defaultWebOrigin;
+}
 
 const server = createServer(async (request, response) => {
   if (request.method === "OPTIONS") {
+    const allowedOrigin = getAllowedOrigin(request);
     response.writeHead(204, {
-      "access-control-allow-origin": "http://localhost:3000",
+      "access-control-allow-origin": allowedOrigin,
       "access-control-allow-methods": "GET,OPTIONS",
       "access-control-allow-headers": "Content-Type",
+      vary: "Origin",
     });
     response.end();
     return;
@@ -37,12 +44,14 @@ const server = createServer(async (request, response) => {
     try {
       const orthancResponse = await fetchOrthancInstanceFile(instanceId);
       const arrayBuffer = await orthancResponse.arrayBuffer();
+      const allowedOrigin = getAllowedOrigin(request);
 
       response.writeHead(200, {
         "content-type": "application/dicom",
-        "access-control-allow-origin": "http://localhost:3000",
+        "access-control-allow-origin": allowedOrigin,
         "access-control-allow-methods": "GET,OPTIONS",
         "access-control-allow-headers": "Content-Type",
+        vary: "Origin",
       });
       response.end(Buffer.from(arrayBuffer));
     } catch (error) {

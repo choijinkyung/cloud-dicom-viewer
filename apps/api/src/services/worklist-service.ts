@@ -124,7 +124,7 @@ export async function getStudyByInstanceUid(studyInstanceUid: string) {
                   sopInstanceUid: instanceId,
                   instanceNumber: instanceIndex + 1,
                   sopClassUid: null,
-                  imageUrl: `http://localhost:4000/api/instances/${instanceId}/file`,
+                  imageUrl: `/api/instances/${instanceId}/file`,
                 }),
               ),
             };

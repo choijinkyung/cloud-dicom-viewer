@@ -1,5 +1,6 @@
 import type { StudyDetail } from "@dicom-viewer/shared";
 import { StudyViewerClient } from "./StudyViewerClient";
+import { getInternalApiBaseUrl } from "../../../lib/api";
 
 interface StudyViewerPageProps {
   params: Promise<{
@@ -9,7 +10,7 @@ interface StudyViewerPageProps {
 
 async function getStudyDetail(studyInstanceUid: string): Promise<StudyDetail> {
   const response = await fetch(
-    `http://localhost:4000/api/studies/${encodeURIComponent(studyInstanceUid)}`,
+    `${getInternalApiBaseUrl()}/api/studies/${encodeURIComponent(studyInstanceUid)}`,
     { cache: "no-store" },
   );
 

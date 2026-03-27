@@ -96,6 +96,31 @@ Then open:
 - `http://localhost:3000/worklist`
 - `http://localhost:8042` for Orthanc
 
+## Deployment
+
+This repository is prepared for Render-based deployment.
+
+Included deployment files:
+
+- [`render.yaml`](/Users/jinkyung/Desktop/Jinkyung/Work/DICOMViewer/render.yaml)
+- [`apps/web/Dockerfile`](/Users/jinkyung/Desktop/Jinkyung/Work/DICOMViewer/apps/web/Dockerfile)
+- [`apps/api/Dockerfile`](/Users/jinkyung/Desktop/Jinkyung/Work/DICOMViewer/apps/api/Dockerfile)
+- [`services/orthanc/Dockerfile`](/Users/jinkyung/Desktop/Jinkyung/Work/DICOMViewer/services/orthanc/Dockerfile)
+
+Recommended Render services:
+
+- `cloud-dicom-web`
+- `cloud-dicom-api`
+- `cloud-dicom-orthanc`
+- `cloud-dicom-postgres`
+
+Deployment notes:
+
+- The web app talks to the API over Render's private network.
+- Browser-side DICOM file requests are proxied through the Next.js app with same-origin routes.
+- Set `ORTHANC_PASSWORD` and `WEB_ORIGIN` in Render after the first Blueprint sync.
+- Run your Prisma migration and seed steps in production if you want non-demo database content.
+
 ## Product Direction
 
 This project is intentionally bigger than a viewer shell. The long-term direction includes:
