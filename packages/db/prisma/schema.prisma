@@ -1,0 +1,325 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  DISABLED
+}
+
+enum OrderStatus {
+  SCHEDULED
+  ARRIVED
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+}
+
+enum StudyStatus {
+  RECEIVED
+  INDEXED
+  ASSIGNED
+  READ
+  ARCHIVED
+  FAILED
+}
+
+enum ReportStatus {
+  DRAFT
+  FINAL
+  AMENDED
+}
+
+enum IngestSourceType {
+  DICOM
+  HL7
+  FHIR
+}
+
+enum IngestStatus {
+  RECEIVED
+  PARSED
+  INDEXED
+  FAILED
+}
+
+model Organization {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  status      String     @default("active")
+  createdAt   DateTime   @default(now())
+  facilities  Facility[]
+  users       User[]
+  patients    Patient[]
+  orders      Order[]
+  studies     Study[]
+  auditLogs   AuditLog[]
+}
+
+model Facility {
+  id              String               @id @default(cuid())
+  organizationId  String
+  name            String
+  code            String
+  timezone        String
+  createdAt       DateTime             @default(now())
+  organization    Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  studies         Study[]
+  modalityDevices ModalityDevice[]
+  roleAssignments UserRoleAssignment[]
+
+  @@unique([organizationId, code])
+}
+
+model User {
+  id                      String               @id @default(cuid())
+  organizationId          String
+  identityProviderSubject String               @unique
+  email                   String               @unique
+  displayName             String
+  status                  UserStatus           @default(ACTIVE)
+  createdAt               DateTime             @default(now())
+  organization            Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  roleAssignments         UserRoleAssignment[]
+  reports                 Report[]
+  annotations             Annotation[]
+  auditLogs               AuditLog[]
+}
+
+model Role {
+  id              String               @id @default(cuid())
+  organizationId  String?
+  code            String
+  name            String
+  description     String?
+  roleAssignments UserRoleAssignment[]
+  rolePermissions RolePermission[]
+
+  @@unique([organizationId, code])
+}
+
+model Permission {
+  id          String @id @default(cuid())
+  resource    String
+  action      String
+  description String?
+  rolePermissions RolePermission[]
+
+  @@unique([resource, action])
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+}
+
+model UserRoleAssignment {
+  id         String   @id @default(cuid())
+  userId     String
+  roleId     String
+  facilityId String?
+  assignedAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  facility   Facility? @relation(fields: [facilityId], references: [id], onDelete: SetNull)
+}
+
+model Patient {
+  id                 String              @id @default(cuid())
+  organizationId     String
+  primaryMrn         String?
+  firstName          String
+  lastName           String
+  birthDate          DateTime?
+  sex                String?
+  createdAt          DateTime            @default(now())
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  identifiers        PatientIdentifier[]
+  externalLinks      ExternalResourceLink[]
+  orders             Order[]
+  studies            Study[]
+}
+
+model PatientIdentifier {
+  id                 String  @id @default(cuid())
+  patientId          String
+  identifierType     String
+  identifierValue    String
+  assigningAuthority String?
+  patient            Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@unique([identifierType, identifierValue, assigningAuthority])
+}
+
+model Order {
+  id                String      @id @default(cuid())
+  organizationId    String
+  patientId         String
+  placerOrderNumber String?
+  fillerOrderNumber String?
+  accessionNumber   String?     @unique
+  status            OrderStatus @default(SCHEDULED)
+  modality          String?
+  scheduledAt       DateTime?
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  patient           Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  studies           Study[]
+}
+
+model Study {
+  id               String       @id @default(cuid())
+  organizationId   String
+  facilityId       String
+  patientId        String
+  orderId          String?
+  studyInstanceUid String       @unique
+  accessionNumber  String?
+  studyDate        DateTime?
+  studyDescription String?
+  modalitySummary  String?
+  orthancStudyId   String?
+  status           StudyStatus  @default(RECEIVED)
+  receivedAt       DateTime     @default(now())
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  facility         Facility     @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  patient          Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  order            Order?       @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  series           Series[]
+  reports          Report[]
+  annotations      Annotation[]
+  externalLinks    ExternalResourceLink[]
+  accessPolicies   StudyAccessPolicy[]
+}
+
+model Series {
+  id                String     @id @default(cuid())
+  studyId           String
+  seriesInstanceUid String     @unique
+  modality          String?
+  bodyPart          String?
+  seriesNumber      Int?
+  description       String?
+  orthancSeriesId   String?
+  study             Study      @relation(fields: [studyId], references: [id], onDelete: Cascade)
+  instances         Instance[]
+  annotations       Annotation[]
+}
+
+model Instance {
+  id               String      @id @default(cuid())
+  seriesId         String
+  sopInstanceUid   String      @unique
+  instanceNumber   Int?
+  sopClassUid      String?
+  orthancInstanceId String?
+  objectStorageKey String?
+  series           Series      @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  annotations      Annotation[]
+}
+
+model Report {
+  id           String       @id @default(cuid())
+  studyId      String
+  authorUserId String
+  status       ReportStatus @default(DRAFT)
+  content      Json?
+  signedAt     DateTime?
+  study        Study        @relation(fields: [studyId], references: [id], onDelete: Cascade)
+  author       User         @relation(fields: [authorUserId], references: [id], onDelete: Cascade)
+}
+
+model Annotation {
+  id             String   @id @default(cuid())
+  studyId        String
+  seriesId       String?
+  instanceId     String?
+  authorUserId   String
+  annotationType String
+  payloadJson    Json
+  createdAt      DateTime @default(now())
+  study          Study    @relation(fields: [studyId], references: [id], onDelete: Cascade)
+  series         Series?  @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  instance       Instance? @relation(fields: [instanceId], references: [id], onDelete: SetNull)
+  author         User     @relation(fields: [authorUserId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id             String       @id @default(cuid())
+  organizationId String
+  actorUserId    String?
+  action         String
+  resourceType   String
+  resourceId     String?
+  facilityId     String?
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  actor          User?        @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+}
+
+model ExternalResourceLink {
+  id                 String   @id @default(cuid())
+  patientId          String?
+  studyId            String?
+  sourceSystem       String
+  resourceType       String
+  externalId         String
+  externalIdentifier String?
+  payloadJson        Json?
+  patient            Patient? @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  study              Study?   @relation(fields: [studyId], references: [id], onDelete: SetNull)
+
+  @@index([sourceSystem, resourceType])
+}
+
+model StudyAccessPolicy {
+  id            String   @id @default(cuid())
+  studyId       String
+  facilityId    String?
+  roleCode      String?
+  userId        String?
+  canRead       Boolean  @default(true)
+  canDownload   Boolean  @default(false)
+  canAnnotate   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  study         Study    @relation(fields: [studyId], references: [id], onDelete: Cascade)
+
+  @@index([studyId, facilityId, roleCode, userId])
+}
+
+model ModalityDevice {
+  id           String   @id @default(cuid())
+  facilityId   String
+  aeTitle      String
+  hostname     String
+  port         Int
+  modalityType String
+  status       String   @default("active")
+  facility     Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+
+  @@unique([facilityId, aeTitle])
+}
+
+model IngestEvent {
+  id              String           @id @default(cuid())
+  sourceType      IngestSourceType
+  sourceIdentifier String?
+  payloadFormat   String
+  correlationId   String?
+  status          IngestStatus     @default(RECEIVED)
+  rawReference    String?
+  receivedAt      DateTime         @default(now())
+}
