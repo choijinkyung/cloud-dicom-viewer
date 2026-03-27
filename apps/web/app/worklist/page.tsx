@@ -1,18 +1,22 @@
 import Link from "next/link";
-import { WorklistItem } from "@dicom-viewer/shared";
+import { demoWorklistItems, WorklistItem } from "@dicom-viewer/shared";
 import { getInternalApiBaseUrl } from "../../lib/api";
 
 async function getWorklistItems(): Promise<WorklistItem[]> {
-  const response = await fetch(`${getInternalApiBaseUrl()}/api/worklist`, {
-    cache: "no-store",
-  });
+  try {
+    const response = await fetch(`${getInternalApiBaseUrl()}/api/worklist`, {
+      cache: "no-store",
+    });
 
-  if (!response.ok) {
-    throw new Error("Failed to fetch worklist items");
+    if (!response.ok) {
+      throw new Error("Failed to fetch worklist items");
+    }
+
+    const data = (await response.json()) as { items: WorklistItem[] };
+    return data.items;
+  } catch {
+    return demoWorklistItems;
   }
-
-  const data = (await response.json()) as { items: WorklistItem[] };
-  return data.items;
 }
 
 export default async function WorklistPage() {
@@ -56,6 +60,9 @@ export default async function WorklistPage() {
             }}
           >
             Worklist
+          </p>
+          <p style={{ margin: "8px 0 0", color: "#8ea3b7" }}>
+            Falls back to hosted demo data when the backend is unavailable.
           </p>
           <h1 style={{ margin: "10px 0 0", fontSize: "40px", color: "#f3f7fb" }}>
             Imaging Studies

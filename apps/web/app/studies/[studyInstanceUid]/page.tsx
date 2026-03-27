@@ -1,4 +1,4 @@
-import type { StudyDetail } from "@dicom-viewer/shared";
+import { getDemoStudyDetail, type StudyDetail } from "@dicom-viewer/shared";
 import { StudyViewerClient } from "./StudyViewerClient";
 import { getInternalApiBaseUrl } from "../../../lib/api";
 
@@ -9,16 +9,20 @@ interface StudyViewerPageProps {
 }
 
 async function getStudyDetail(studyInstanceUid: string): Promise<StudyDetail> {
-  const response = await fetch(
-    `${getInternalApiBaseUrl()}/api/studies/${encodeURIComponent(studyInstanceUid)}`,
-    { cache: "no-store" },
-  );
+  try {
+    const response = await fetch(
+      `${getInternalApiBaseUrl()}/api/studies/${encodeURIComponent(studyInstanceUid)}`,
+      { cache: "no-store" },
+    );
 
-  if (!response.ok) {
-    throw new Error("Failed to fetch study detail.");
+    if (!response.ok) {
+      throw new Error("Failed to fetch study detail.");
+    }
+
+    return (await response.json()) as StudyDetail;
+  } catch {
+    return getDemoStudyDetail(studyInstanceUid);
   }
-
-  return (await response.json()) as StudyDetail;
 }
 
 export default async function StudyViewerPage({

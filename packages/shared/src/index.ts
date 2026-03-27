@@ -81,3 +81,163 @@ export const demoWorklistItems: WorklistItem[] = [
     status: "read",
   },
 ];
+
+export const demoStudyDetails: Record<string, StudyDetail> = {
+  "1.2.840.10008.1001.1": {
+    studyInstanceUid: "1.2.840.10008.1001.1",
+    accessionNumber: "ACC-CT-24019",
+    studyDescription: "CT Chest With Contrast",
+    modalitySummary: "CT",
+    status: "DEMO",
+    studyDate: "2026-03-24",
+    receivedAt: "2026-03-24T08:30:00.000Z",
+    patient: {
+      id: "demo-patient-1",
+      firstName: "Eleanor",
+      lastName: "Brooks",
+      mrn: "MRN-100245",
+    },
+    reports: [
+      {
+        id: "demo-report-1",
+        status: "draft",
+        signedAt: null,
+        content:
+          "Demo deployment mode: full DICOM rendering is available in the local full-stack environment.",
+      },
+    ],
+    series: [
+      {
+        id: "demo-series-ct-1",
+        seriesInstanceUid: "demo-series-ct-1",
+        modality: "CT",
+        description: "Axial Lung Window",
+        seriesNumber: 1,
+        instanceCount: 18,
+        instances: Array.from({ length: 18 }, (_, index) => ({
+          id: `demo-ct-1-${index + 1}`,
+          sopInstanceUid: `demo-ct-1-${index + 1}`,
+          instanceNumber: index + 1,
+          sopClassUid: null,
+        })),
+      },
+      {
+        id: "demo-series-ct-2",
+        seriesInstanceUid: "demo-series-ct-2",
+        modality: "CT",
+        description: "Coronal Reconstruction",
+        seriesNumber: 2,
+        instanceCount: 12,
+        instances: Array.from({ length: 12 }, (_, index) => ({
+          id: `demo-ct-2-${index + 1}`,
+          sopInstanceUid: `demo-ct-2-${index + 1}`,
+          instanceNumber: index + 1,
+          sopClassUid: null,
+        })),
+      },
+    ],
+  },
+  "1.2.840.10008.1001.2": {
+    studyInstanceUid: "1.2.840.10008.1001.2",
+    accessionNumber: "ACC-MR-88412",
+    studyDescription: "MRI Brain Without Contrast",
+    modalitySummary: "MR",
+    status: "DEMO",
+    studyDate: "2026-03-25",
+    receivedAt: "2026-03-25T14:10:00.000Z",
+    patient: {
+      id: "demo-patient-2",
+      firstName: "Daniel",
+      lastName: "Parker",
+      mrn: "MRN-100246",
+    },
+    reports: [
+      {
+        id: "demo-report-2",
+        status: "preliminary",
+        signedAt: null,
+        content:
+          "UI demo only. Run the local stack to connect Orthanc and render actual DICOM instances.",
+      },
+    ],
+    series: [
+      {
+        id: "demo-series-mr-1",
+        seriesInstanceUid: "demo-series-mr-1",
+        modality: "MR",
+        description: "Ax T2 FLAIR",
+        seriesNumber: 3,
+        instanceCount: 24,
+        instances: Array.from({ length: 24 }, (_, index) => ({
+          id: `demo-mr-1-${index + 1}`,
+          sopInstanceUid: `demo-mr-1-${index + 1}`,
+          instanceNumber: index + 1,
+          sopClassUid: null,
+        })),
+      },
+      {
+        id: "demo-series-mr-2",
+        seriesInstanceUid: "demo-series-mr-2",
+        modality: "MR",
+        description: "Sag T1",
+        seriesNumber: 5,
+        instanceCount: 16,
+        instances: Array.from({ length: 16 }, (_, index) => ({
+          id: `demo-mr-2-${index + 1}`,
+          sopInstanceUid: `demo-mr-2-${index + 1}`,
+          instanceNumber: index + 1,
+          sopClassUid: null,
+        })),
+      },
+    ],
+  },
+  "1.2.840.10008.1001.3": {
+    studyInstanceUid: "1.2.840.10008.1001.3",
+    accessionNumber: "ACC-XR-99418",
+    studyDescription: "Chest X-Ray AP Portable",
+    modalitySummary: "XR",
+    status: "DEMO",
+    studyDate: "2026-03-26",
+    receivedAt: "2026-03-26T09:45:00.000Z",
+    patient: {
+      id: "demo-patient-3",
+      firstName: "Amelia",
+      lastName: "Foster",
+      mrn: "MRN-100247",
+    },
+    reports: [
+      {
+        id: "demo-report-3",
+        status: "final",
+        signedAt: "2026-03-26T12:00:00.000Z",
+        content:
+          "No acute cardiopulmonary abnormality. Demo report shown for hosted UI preview.",
+      },
+    ],
+    series: [
+      {
+        id: "demo-series-xr-1",
+        seriesInstanceUid: "demo-series-xr-1",
+        modality: "XR",
+        description: "Portable AP",
+        seriesNumber: 1,
+        instanceCount: 1,
+        instances: [
+          {
+            id: "demo-xr-1-1",
+            sopInstanceUid: "demo-xr-1-1",
+            instanceNumber: 1,
+            sopClassUid: null,
+          },
+        ],
+      },
+    ],
+  },
+};
+
+export function getDemoStudyDetail(studyInstanceUid: string): StudyDetail {
+  return (
+    demoStudyDetails[studyInstanceUid] ??
+    demoStudyDetails["1.2.840.10008.1001.2"]
+  );
+}

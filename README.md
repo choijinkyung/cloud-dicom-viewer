@@ -65,6 +65,11 @@ Most portfolio viewers stop at a pretty mockup. This one goes further:
 - Wheel scroll navigation across image slices
 - PACS-inspired worklist-to-viewer UX
 
+## Demo Modes
+
+- Local full stack: real Orthanc-backed DICOM loading, API integration, and live viewer rendering
+- Hosted UI demo: fallback worklist and study data when the backend is unavailable, useful for free portfolio deployment on Vercel
+
 ## Repository Layout
 
 ```text
@@ -98,7 +103,10 @@ Then open:
 
 ## Deployment
 
-This repository is prepared for Render-based deployment.
+This repository supports two deployment styles:
+
+- Vercel UI demo deployment with built-in fallback demo data
+- Render full-stack deployment with web, API, PostgreSQL, and Orthanc
 
 Included deployment files:
 

@@ -21,6 +21,7 @@ export function DicomViewport({
   seriesDescription,
   onImageIndexChange,
 }: DicomViewportProps) {
+  const isDemoMode = stackImageUrls.length === 0;
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const renderingEngineRef = useRef<cornerstone.RenderingEngine | null>(null);
   const wheelDeltaRef = useRef(0);
@@ -450,9 +451,53 @@ export function DicomViewport({
           {seriesDescription ?? "N/A"}
         </p>
         <p style={{ margin: "6px 0 0", color: "#98a2b3", fontSize: "12px" }}>
-          Slice {currentImageIndex + 1} / {stackImageUrls.length}
+          {isDemoMode
+            ? "Hosted UI Demo"
+            : `Slice ${currentImageIndex + 1} / ${stackImageUrls.length}`}
         </p>
       </div>
+      {isDemoMode ? (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "grid",
+            placeItems: "center",
+            padding: "24px",
+            zIndex: 2,
+          }}
+        >
+          <div
+            style={{
+              maxWidth: "560px",
+              padding: "22px 24px",
+              borderRadius: "20px",
+              background: "rgba(4, 10, 18, 0.68)",
+              border: "1px solid rgba(88, 196, 220, 0.16)",
+              textAlign: "center",
+            }}
+          >
+            <p
+              style={{
+                margin: 0,
+                color: "#8fdff3",
+                fontSize: "12px",
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+              }}
+            >
+              Demo Mode
+            </p>
+            <p style={{ margin: "10px 0 0", color: "#f3f7fb", fontSize: "24px" }}>
+              Hosted UI preview
+            </p>
+            <p style={{ margin: "10px 0 0", color: "#9fb3c8", lineHeight: 1.6 }}>
+              This deployment showcases the viewer layout and workflow. Run the
+              local full stack to connect Orthanc and render live DICOM slices.
+            </p>
+          </div>
+        </div>
+      ) : null}
       <div
         style={{
           position: "absolute",
@@ -468,7 +513,9 @@ export function DicomViewport({
           pointerEvents: "none",
         }}
       >
-        Wheel Scroll • Image {instanceNumber ?? currentImageIndex + 1}
+        {isDemoMode
+          ? "Local stack required for live DICOM"
+          : `Wheel Scroll • Image ${instanceNumber ?? currentImageIndex + 1}`}
       </div>
     </div>
   );
