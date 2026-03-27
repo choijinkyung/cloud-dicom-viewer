@@ -60,9 +60,6 @@ export default async function WorklistPage() {
             Imaging Studies
           </h1>
         </div>
-        <Link href="/" style={{ color: "#8fdff3" }}>
-          Back to dashboard
-        </Link>
       </div>
 
       <div style={{ display: "grid", gap: "14px", marginTop: "24px" }}>
