@@ -3,19 +3,19 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "node ../../node_modules/pnpm/bin/pnpm.cjs exec next dev",
-    "build": "node ../../node_modules/pnpm/bin/pnpm.cjs exec next build",
-    "start": "node ../../node_modules/pnpm/bin/pnpm.cjs exec next start",
-    "lint": "node ../../node_modules/pnpm/bin/pnpm.cjs exec tsc -p tsconfig.json --noEmit",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "tsc -p tsconfig.json --noEmit",
     "test": "echo \"No tests yet for web\"",
-    "format": "node ../../node_modules/pnpm/bin/pnpm.cjs exec prettier --check ."
+    "format": "prettier --check ."
   },
   "dependencies": {
     "@cornerstonejs/core": "^4.20.0",
     "@cornerstonejs/dicom-image-loader": "^4.20.0",
     "@cornerstonejs/streaming-image-volume-loader": "^1.86.1",
     "@cornerstonejs/tools": "^4.20.0",
-    "@dicom-viewer/shared": "0.1.0",
+    "@dicom-viewer/shared": "file:../../packages/shared",
     "dicom-parser": "^1.8.21",
     "next": "^15.2.0",
     "react": "^19.0.0",
