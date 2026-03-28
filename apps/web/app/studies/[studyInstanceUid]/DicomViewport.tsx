@@ -36,7 +36,7 @@ interface DicomViewportProps {
   currentImageIndex?: number;
   instanceNumber?: number | null;
   seriesDescription?: string | null;
-  activeTool: ViewerTool;
+  activeTool: ViewerTool | null;
   utilityActionRequest?: {
     type: ViewerUtilityAction;
     nonce: number;
@@ -593,6 +593,10 @@ export function DicomViewport({
       Arrow: csTools.ArrowAnnotateTool.toolName,
       KeyImage: csTools.KeyImageTool.toolName,
     };
+
+    if (!activeTool) {
+      return;
+    }
 
     const toolName = activeToolNameMap[activeTool];
 

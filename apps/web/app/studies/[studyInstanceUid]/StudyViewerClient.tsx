@@ -6,7 +6,6 @@ import type { StudyDetail } from "@dicom-viewer/shared";
 import { DicomViewport } from "./DicomViewport";
 
 type ViewerTool =
-  | "None"
   | "WL"
   | "Zoom"
   | "Pan"
@@ -271,7 +270,6 @@ function ToolGroupIcon({ group }: { group: ToolGroupKey }) {
 }
 
 const TOOL_LABELS: Record<ViewerTool, string> = {
-  None: "None",
   WL: "Window / Level",
   Zoom: "Zoom",
   Pan: "Pan",
@@ -315,7 +313,7 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
     initialInstance?.id ?? null,
   );
 
-  const [activeTool, setActiveTool] = useState<ViewerTool>("WL");
+  const [activeTool, setActiveTool] = useState<ViewerTool | null>("WL");
   const [activeToolGroup, setActiveToolGroup] = useState<ToolGroupKey>("Navigate");
   const [openToolGroup, setOpenToolGroup] = useState<ToolGroupKey | null>(
     "Navigate",
@@ -373,7 +371,9 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
       }
 
       if (event.key === "Escape") {
-        setActiveTool("None");
+        setActiveToolGroup("Navigate");
+        setOpenToolGroup(null);
+        setActiveTool(null);
         return;
       }
 
@@ -885,7 +885,7 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                 >
                   Active:{" "}
                   <span style={{ color: "#dff6ff", marginLeft: "6px" }}>
-                    {activeTool === "None" ? "Idle" : TOOL_LABELS[activeTool]}
+                    {activeTool ? TOOL_LABELS[activeTool] : "Idle"}
                   </span>
                 </div>
               </div>
@@ -961,7 +961,7 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                             <button
                               type="button"
                               aria-label={item.label}
-                              onClick={() => {
+                          onClick={() => {
                                 if (isTool) {
                                   setActiveTool(item.key);
                                   setActiveToolGroup(openToolGroup);
