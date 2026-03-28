@@ -270,6 +270,34 @@ function ToolGroupIcon({ group }: { group: ToolGroupKey }) {
   }
 }
 
+const TOOL_LABELS: Record<ViewerTool, string> = {
+  None: "None",
+  WL: "Window / Level",
+  Zoom: "Zoom",
+  Pan: "Pan",
+  Rotate: "Rotate",
+  Magnify: "Magnify",
+  Cine: "Stack Scroll",
+  Length: "Length",
+  Height: "Height",
+  Probe: "Probe",
+  Angle: "Angle",
+  Cobb: "Cobb Angle",
+  Bidirectional: "Bidirectional",
+  RectROI: "Rectangle ROI",
+  EllipseROI: "Ellipse ROI",
+  CircleROI: "Circle ROI",
+  Arrow: "Arrow Annotate",
+  KeyImage: "Key Image",
+};
+
+const GROUP_DESCRIPTIONS: Record<ToolGroupKey, string> = {
+  Navigate: "Viewport manipulation",
+  Measure: "Measurement and ROI tools",
+  Annotate: "Markup and key image tools",
+  Utility: "Reset and cleanup actions",
+};
+
 interface StudyViewerClientProps {
   study: StudyDetail;
 }
@@ -727,13 +755,28 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
               width: "100%",
             }}
           >
-            <div style={{ display: "grid", gap: "10px" }}>
+            <div
+              style={{
+                display: "grid",
+                gap: "10px",
+                position: "relative",
+                overflow: "visible",
+              }}
+            >
               <div
                 style={{
                   display: "flex",
-                  gap: "8px",
-                  flexWrap: "wrap",
+                  gap: "0",
+                  flexWrap: "nowrap",
                   alignItems: "center",
+                  overflowX: "auto",
+                  paddingBottom: "2px",
+                  scrollbarWidth: "thin",
+                  borderRadius: "18px",
+                  border: "1px solid rgba(88, 196, 220, 0.14)",
+                  background:
+                    "linear-gradient(180deg, rgba(15, 21, 33, 0.98), rgba(10, 18, 30, 0.98))",
+                  minHeight: "68px",
                 }}
               >
                 {TOOL_GROUPS.map((group) => {
@@ -767,36 +810,59 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                       style={{
                         background:
                           isActiveGroup || isOpen
-                            ? "linear-gradient(180deg, rgba(126, 224, 161, 0.18), rgba(67, 143, 104, 0.24))"
-                            : "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
+                            ? "linear-gradient(180deg, rgba(54, 61, 79, 0.98), rgba(37, 42, 58, 0.98))"
+                            : "transparent",
                         color:
-                          isActiveGroup || isOpen ? "#f3fffb" : "#a7cad8",
+                          isActiveGroup || isOpen ? "#f3fffb" : "#c2d6e1",
                         border:
                           isActiveGroup || isOpen
-                            ? "1px solid rgba(126, 224, 161, 0.38)"
-                            : "1px solid rgba(88, 196, 220, 0.16)",
-                        padding: "9px 12px",
-                        borderRadius: "12px",
+                            ? "1px solid rgba(255, 68, 112, 0.38)"
+                            : "1px solid transparent",
+                        borderRight:
+                          group !== TOOL_GROUPS[TOOL_GROUPS.length - 1]
+                            ? "1px solid rgba(255, 255, 255, 0.05)"
+                            : undefined,
+                        padding: "10px 12px 9px",
+                        minWidth: "86px",
+                        minHeight: "66px",
+                        borderRadius: "0",
                         cursor: "pointer",
-                        fontSize: "12px",
-                        letterSpacing: "0.04em",
-                        textTransform: "uppercase",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        boxShadow:
-                          isActiveGroup || isOpen
-                            ? "0 12px 24px rgba(126, 224, 161, 0.12)"
-                            : "none",
+                        fontSize: "11px",
+                        display: "grid",
+                        justifyItems: "center",
+                        alignContent: "center",
+                        gap: "7px",
+                        flexShrink: 0,
+                        position: "relative",
                       }}
                     >
-                      <ToolGroupIcon group={group.key} />
-                      {group.label}
                       <span
                         style={{
-                          fontSize: "11px",
+                          color:
+                            isActiveGroup || isOpen ? "#ff4d78" : "#e5edf2",
+                        }}
+                      >
+                        <ToolGroupIcon group={group.key} />
+                      </span>
+                      <span
+                        style={{
+                          maxWidth: "68px",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {group.label}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "10px",
                           transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
                           transition: "transform 160ms ease",
+                          color: "#ff4d78",
+                          position: "absolute",
+                          right: "8px",
+                          bottom: "8px",
                         }}
                       >
                         ▼
@@ -804,19 +870,42 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                     </button>
                   );
                 })}
+
+                <div
+                  style={{
+                    marginLeft: "auto",
+                    padding: "0 14px",
+                    display: "flex",
+                    alignItems: "center",
+                    color: "#8ea3b7",
+                    fontSize: "12px",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                  }}
+                >
+                  Active:{" "}
+                  <span style={{ color: "#dff6ff", marginLeft: "6px" }}>
+                    {activeTool === "None" ? "Idle" : TOOL_LABELS[activeTool]}
+                  </span>
+                </div>
               </div>
 
               {openToolGroup ? (
                 <div
                   style={{
+                    position: "absolute",
+                    top: "calc(100% - 2px)",
+                    left: 0,
+                    zIndex: 10,
                     borderRadius: "18px",
-                    border: "1px solid rgba(88, 196, 220, 0.16)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
                     background:
-                      "linear-gradient(180deg, rgba(15, 21, 33, 0.98), rgba(10, 18, 30, 0.98))",
-                    padding: "12px",
+                      "linear-gradient(180deg, rgba(65, 66, 79, 0.98), rgba(52, 53, 66, 0.98))",
+                    padding: "12px 12px 10px",
                     display: "grid",
-                    gap: "10px",
-                    boxShadow: "0 18px 40px rgba(0, 0, 0, 0.26)",
+                    gap: "12px",
+                    boxShadow: "0 24px 60px rgba(0, 0, 0, 0.42)",
+                    width: "min(420px, calc(100vw - 48px))",
                   }}
                 >
                   <div
@@ -839,18 +928,17 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                       }}
                     >
                       <ToolGroupIcon group={openToolGroup} />
-                      {openToolGroup} Tools
+                      {openToolGroup}
                     </div>
-                    <div style={{ color: "#6f8594", fontSize: "11px" }}>
-                      Hover icons to preview tool names
+                    <div style={{ color: "#c4cad4", fontSize: "11px" }}>
+                      {GROUP_DESCRIPTIONS[openToolGroup]}
                     </div>
                   </div>
 
                   <div
                     style={{
-                      display: "flex",
-                      gap: "8px",
-                      flexWrap: "wrap",
+                      display: "grid",
+                      gap: "6px",
                     }}
                   >
                     {TOOL_GROUPS.find((group) => group.key === openToolGroup)?.items.map(
@@ -865,7 +953,7 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                             key={item.key}
                             style={{
                               position: "relative",
-                              display: "inline-flex",
+                              display: "grid",
                             }}
                             onMouseEnter={() => setHoveredToolbarItem(itemId)}
                             onMouseLeave={() => setHoveredToolbarItem(null)}
@@ -886,34 +974,55 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                                 });
                               }}
                               style={{
-                                width: "42px",
-                                height: "42px",
+                                minHeight: "44px",
                                 display: "grid",
-                                placeItems: "center",
+                                gridTemplateColumns: "18px minmax(0, 1fr) auto",
+                                alignItems: "center",
+                                gap: "12px",
+                                padding: "0 12px",
                                 background: isActive
-                                  ? "linear-gradient(180deg, rgba(235, 55, 99, 0.22), rgba(143, 32, 63, 0.28))"
-                                  : "linear-gradient(180deg, rgba(28, 36, 52, 0.98), rgba(16, 22, 34, 0.98))",
+                                  ? "linear-gradient(180deg, rgba(255, 76, 119, 0.2), rgba(155, 45, 76, 0.24))"
+                                  : "rgba(255, 255, 255, 0.02)",
                                 color: isActive ? "#fff1f4" : "#dff6ff",
                                 border: isActive
                                   ? "1px solid rgba(255, 110, 148, 0.48)"
-                                  : "1px solid rgba(88, 196, 220, 0.2)",
+                                  : "1px solid transparent",
                                 borderRadius: "10px",
                                 cursor: "pointer",
                                 boxShadow: isActive
                                   ? "0 12px 28px rgba(235, 55, 99, 0.18)"
                                   : "none",
+                                textAlign: "left",
                               }}
                             >
                               <ToolbarGlyph item={item.key} />
+                              <span
+                                style={{
+                                  fontSize: "13px",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {item.label}
+                              </span>
+                              <span
+                                style={{
+                                  color: isActive ? "#ffd7e0" : "#9099aa",
+                                  fontSize: "11px",
+                                }}
+                              >
+                                {isTool ? "Tool" : "Run"}
+                              </span>
                             </button>
 
                             {hoveredToolbarItem === itemId ? (
                               <div
                                 style={{
                                   position: "absolute",
-                                  left: "50%",
-                                  bottom: "calc(100% + 10px)",
-                                  transform: "translateX(-50%)",
+                                  left: "calc(100% + 12px)",
+                                  top: "50%",
+                                  transform: "translateY(-50%)",
                                   pointerEvents: "none",
                                   zIndex: 4,
                                   padding: "8px 10px",
@@ -932,17 +1041,17 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                                 <div
                                   style={{
                                     position: "absolute",
-                                    left: "50%",
-                                    top: "100%",
+                                    right: "100%",
+                                    top: "50%",
                                     width: "10px",
                                     height: "10px",
                                     background: "rgba(8, 12, 20, 0.98)",
-                                    borderRight:
+                                    borderLeft:
                                       "1px solid rgba(255, 255, 255, 0.08)",
                                     borderBottom:
                                       "1px solid rgba(255, 255, 255, 0.08)",
                                     transform:
-                                      "translate(-50%, -50%) rotate(45deg)",
+                                      "translate(50%, -50%) rotate(45deg)",
                                   }}
                                 />
                               </div>
@@ -954,19 +1063,6 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                   </div>
                 </div>
               ) : null}
-
-              <p
-                style={{
-                  margin: 0,
-                  color: "#8ea3b7",
-                  fontSize: "12px",
-                }}
-              >
-                Active tool:{" "}
-                <span style={{ color: "#dff6ff" }}>
-                  {activeTool === "None" ? "None (Esc)" : activeTool}
-                </span>
-              </p>
             </div>
           </div>
 
