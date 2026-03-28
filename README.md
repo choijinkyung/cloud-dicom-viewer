@@ -1,6 +1,6 @@
 # Cloud DICOM Web Viewer
 
-An end-to-end medical imaging side project built to feel closer to a real PACS workspace than a simple demo app.
+A PACS-style medical imaging viewer built with Next.js, Orthanc, Prisma, and Cornerstone.
 
 This repository focuses on the core workflow:
 
@@ -17,6 +17,13 @@ Most portfolio viewers stop at a pretty mockup. This one goes further:
 - The viewer is backed by a custom API layer, Prisma models, and shared TypeScript contracts
 - The stack is designed around healthcare interoperability, not just frontend visuals
 - The codebase is structured as a monorepo to grow into a fuller imaging platform
+
+## Demo Experience
+
+- Hosted UI demo: free Vercel deployment with fallback worklist and study data for portfolio review
+- Local full stack: live Orthanc-backed DICOM loading, API integration, and interactive viewer rendering
+
+This split keeps the public demo easy to open while preserving a real end-to-end medical imaging workflow in local development.
 
 ## Current Product Flow
 
@@ -65,11 +72,6 @@ Most portfolio viewers stop at a pretty mockup. This one goes further:
 - Wheel scroll navigation across image slices
 - PACS-inspired worklist-to-viewer UX
 
-## Demo Modes
-
-- Local full stack: real Orthanc-backed DICOM loading, API integration, and live viewer rendering
-- Hosted UI demo: fallback worklist and study data when the backend is unavailable, useful for free portfolio deployment on Vercel
-
 ## Repository Layout
 
 ```text
@@ -110,10 +112,10 @@ This repository supports two deployment styles:
 
 Included deployment files:
 
-- [`render.yaml`](/Users/jinkyung/Desktop/Jinkyung/Work/DICOMViewer/render.yaml)
-- [`apps/web/Dockerfile`](/Users/jinkyung/Desktop/Jinkyung/Work/DICOMViewer/apps/web/Dockerfile)
-- [`apps/api/Dockerfile`](/Users/jinkyung/Desktop/Jinkyung/Work/DICOMViewer/apps/api/Dockerfile)
-- [`services/orthanc/Dockerfile`](/Users/jinkyung/Desktop/Jinkyung/Work/DICOMViewer/services/orthanc/Dockerfile)
+- [`render.yaml`](render.yaml)
+- [`apps/web/Dockerfile`](apps/web/Dockerfile)
+- [`apps/api/Dockerfile`](apps/api/Dockerfile)
+- [`services/orthanc/Dockerfile`](services/orthanc/Dockerfile)
 
 Recommended Render services:
 
