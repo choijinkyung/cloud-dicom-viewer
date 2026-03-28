@@ -296,6 +296,18 @@ const GROUP_DESCRIPTIONS: Record<ToolGroupKey, string> = {
   Utility: "Reset and cleanup actions",
 };
 
+function getToolbarGridColumns(itemCount: number) {
+  if (itemCount <= 4) {
+    return "repeat(2, minmax(0, 1fr))";
+  }
+
+  if (itemCount <= 9) {
+    return "repeat(3, minmax(0, 1fr))";
+  }
+
+  return "repeat(4, minmax(0, 1fr))";
+}
+
 interface StudyViewerClientProps {
   study: StudyDetail;
 }
@@ -930,7 +942,11 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                   <div
                     style={{
                       display: "grid",
-                      gap: "6px",
+                      gap: "8px",
+                      gridTemplateColumns: getToolbarGridColumns(
+                        TOOL_GROUPS.find((group) => group.key === openToolGroup)
+                          ?.items.length ?? 0,
+                      ),
                     }}
                   >
                     {TOOL_GROUPS.find((group) => group.key === openToolGroup)?.items.map(
@@ -966,12 +982,10 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                                 });
                               }}
                               style={{
-                                minHeight: "44px",
+                                minHeight: "48px",
                                 display: "grid",
-                                gridTemplateColumns: "18px minmax(0, 1fr) auto",
-                                alignItems: "center",
-                                gap: "12px",
-                                padding: "0 12px",
+                                placeItems: "center",
+                                padding: 0,
                                 background: isActive
                                   ? "linear-gradient(180deg, rgba(88, 196, 220, 0.22), rgba(42, 108, 122, 0.32))"
                                   : "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
@@ -984,37 +998,19 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                                 boxShadow: isActive
                                   ? "0 12px 28px rgba(88, 196, 220, 0.18)"
                                   : "none",
-                                textAlign: "left",
+                                textAlign: "center",
                               }}
                             >
                               <ToolbarGlyph item={item.key} />
-                              <span
-                                style={{
-                                  fontSize: "13px",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                  whiteSpace: "nowrap",
-                                }}
-                              >
-                                {item.label}
-                              </span>
-                              <span
-                                style={{
-                                  color: isActive ? "#dff6ff" : "#7f9aad",
-                                  fontSize: "11px",
-                                }}
-                              >
-                                {isTool ? "Tool" : "Run"}
-                              </span>
                             </button>
 
                             {hoveredToolbarItem === itemId ? (
                               <div
                                 style={{
                                   position: "absolute",
-                                  left: "calc(100% + 12px)",
-                                  top: "50%",
-                                  transform: "translateY(-50%)",
+                                  left: "50%",
+                                  bottom: "calc(100% + 10px)",
+                                  transform: "translateX(-50%)",
                                   pointerEvents: "none",
                                   zIndex: 4,
                                   padding: "8px 10px",
@@ -1028,25 +1024,25 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                                   whiteSpace: "nowrap",
                                   boxShadow: "0 16px 40px rgba(0, 0, 0, 0.34)",
                                 }}
-                              >
-                                {item.label}
-                                <div
-                                  style={{
-                                    position: "absolute",
-                                    right: "100%",
-                                    top: "50%",
-                                    width: "10px",
-                                    height: "10px",
-                                    background: "rgba(8, 12, 20, 0.98)",
-                                    borderLeft:
-                                      "1px solid rgba(255, 255, 255, 0.08)",
-                                    borderBottom:
-                                      "1px solid rgba(255, 255, 255, 0.08)",
-                                    transform:
-                                      "translate(50%, -50%) rotate(45deg)",
-                                  }}
-                                />
-                              </div>
+                                >
+                                  {item.label}
+                                  <div
+                                    style={{
+                                      position: "absolute",
+                                      left: "50%",
+                                      top: "100%",
+                                      width: "10px",
+                                      height: "10px",
+                                      background: "rgba(8, 12, 20, 0.98)",
+                                      borderRight:
+                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                      borderBottom:
+                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                      transform:
+                                        "translate(-50%, -50%) rotate(45deg)",
+                                    }}
+                                  />
+                                </div>
                             ) : null}
                           </div>
                         );
