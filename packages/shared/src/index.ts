@@ -111,31 +111,34 @@ export const demoStudyDetails: Record<string, StudyDetail> = {
         id: "demo-series-ct-1",
         seriesInstanceUid: "demo-series-ct-1",
         modality: "CT",
-        description: "Bundled Sample DICOM",
+        description: "Bundled Sample Series 1",
         seriesNumber: 1,
-        instanceCount: 1,
-        instances: [
-          {
-            id: "demo-ct-1-1",
-            sopInstanceUid: "demo-ct-1-1",
-            instanceNumber: 1,
-            sopClassUid: null,
-            imageUrl: "/TESTDCM/series-000001/image-000001.dcm",
-          },
-        ],
+        instanceCount: 5,
+        instances: Array.from({ length: 5 }, (_, index) => ({
+          id: `demo-ct-1-${index + 1}`,
+          sopInstanceUid: `demo-ct-1-${index + 1}`,
+          instanceNumber: index + 1,
+          sopClassUid: null,
+          imageUrl: `/TESTDCM/daae3df7f522b56724aed7e3e544c0fe/series-000001/image-${String(
+            index + 1,
+          ).padStart(6, "0")}.dcm`,
+        })),
       },
       {
         id: "demo-series-ct-2",
         seriesInstanceUid: "demo-series-ct-2",
         modality: "CT",
-        description: "Coronal Reconstruction",
+        description: "Bundled Sample Series 2",
         seriesNumber: 2,
-        instanceCount: 12,
-        instances: Array.from({ length: 12 }, (_, index) => ({
+        instanceCount: 2,
+        instances: Array.from({ length: 2 }, (_, index) => ({
           id: `demo-ct-2-${index + 1}`,
           sopInstanceUid: `demo-ct-2-${index + 1}`,
           instanceNumber: index + 1,
           sopClassUid: null,
+          imageUrl: `/TESTDCM/daae3df7f522b56724aed7e3e544c0fe/series-000002/image-${String(
+            index + 1,
+          ).padStart(6, "0")}.dcm`,
         })),
       },
     ],
