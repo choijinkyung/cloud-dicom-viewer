@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { StudyDetail } from "@dicom-viewer/shared";
 import { DicomViewport } from "./DicomViewport";
@@ -473,6 +474,67 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
               </h1>
             </div>
           </div>
+
+          <Link
+            href="/worklist"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "10px",
+              padding: "10px 14px",
+              borderRadius: "14px",
+              textDecoration: "none",
+              color: "#e9f6fb",
+              background:
+                "linear-gradient(180deg, rgba(18, 34, 54, 0.96), rgba(11, 21, 35, 0.98))",
+              border: "1px solid rgba(88, 196, 220, 0.18)",
+              boxShadow: "0 12px 28px rgba(2, 6, 16, 0.22)",
+              minWidth: "fit-content",
+            }}
+          >
+            <span
+              style={{
+                width: "28px",
+                height: "28px",
+                borderRadius: "10px",
+                display: "grid",
+                placeItems: "center",
+                background:
+                  "linear-gradient(180deg, rgba(126, 224, 161, 0.18), rgba(88, 196, 220, 0.18))",
+                color: "#8fdff3",
+                flexShrink: 0,
+              }}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M6 3L1.5 8 6 13" />
+                <path d="M2 8h12" />
+              </svg>
+            </span>
+            <span style={{ display: "grid", gap: "2px" }}>
+              <span
+                style={{
+                  fontSize: "10px",
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  color: "#8fbccc",
+                }}
+              >
+                Navigator
+              </span>
+              <span style={{ fontSize: "13px", fontWeight: 600 }}>
+                Back to Worklist
+              </span>
+            </span>
+          </Link>
 
           <div
             style={{
