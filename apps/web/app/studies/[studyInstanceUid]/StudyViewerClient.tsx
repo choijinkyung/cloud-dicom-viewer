@@ -753,6 +753,9 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
               ...panelStyle,
               padding: "10px 14px 14px",
               width: "100%",
+              position: "relative",
+              zIndex: 8,
+              overflow: "visible",
             }}
           >
             <div
@@ -766,17 +769,11 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
               <div
                 style={{
                   display: "flex",
-                  gap: "0",
-                  flexWrap: "nowrap",
+                  gap: "8px",
+                  flexWrap: "wrap",
                   alignItems: "center",
-                  overflowX: "auto",
+                  overflowX: "visible",
                   paddingBottom: "2px",
-                  scrollbarWidth: "thin",
-                  borderRadius: "18px",
-                  border: "1px solid rgba(88, 196, 220, 0.14)",
-                  background:
-                    "linear-gradient(180deg, rgba(15, 21, 33, 0.98), rgba(10, 18, 30, 0.98))",
-                  minHeight: "68px",
                 }}
               >
                 {TOOL_GROUPS.map((group) => {
@@ -810,45 +807,43 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                       style={{
                         background:
                           isActiveGroup || isOpen
-                            ? "linear-gradient(180deg, rgba(54, 61, 79, 0.98), rgba(37, 42, 58, 0.98))"
-                            : "transparent",
+                            ? "linear-gradient(180deg, rgba(126, 224, 161, 0.18), rgba(67, 143, 104, 0.24))"
+                            : "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
                         color:
-                          isActiveGroup || isOpen ? "#f3fffb" : "#c2d6e1",
+                          isActiveGroup || isOpen ? "#f3fffb" : "#a7cad8",
                         border:
                           isActiveGroup || isOpen
-                            ? "1px solid rgba(255, 68, 112, 0.38)"
-                            : "1px solid transparent",
-                        borderRight:
-                          group !== TOOL_GROUPS[TOOL_GROUPS.length - 1]
-                            ? "1px solid rgba(255, 255, 255, 0.05)"
-                            : undefined,
-                        padding: "10px 12px 9px",
-                        minWidth: "86px",
-                        minHeight: "66px",
-                        borderRadius: "0",
+                            ? "1px solid rgba(126, 224, 161, 0.38)"
+                            : "1px solid rgba(88, 196, 220, 0.16)",
+                        padding: "9px 12px",
+                        minWidth: "unset",
+                        minHeight: "unset",
+                        borderRadius: "12px",
                         cursor: "pointer",
-                        fontSize: "11px",
-                        display: "grid",
-                        justifyItems: "center",
-                        alignContent: "center",
+                        fontSize: "12px",
+                        display: "inline-flex",
+                        justifyItems: "unset",
+                        alignContent: "unset",
+                        alignItems: "center",
                         gap: "7px",
                         flexShrink: 0,
                         position: "relative",
+                        boxShadow:
+                          isActiveGroup || isOpen
+                            ? "0 12px 24px rgba(126, 224, 161, 0.12)"
+                            : "none",
                       }}
                     >
                       <span
                         style={{
                           color:
-                            isActiveGroup || isOpen ? "#ff4d78" : "#e5edf2",
+                            isActiveGroup || isOpen ? "#f3fffb" : "#dff6ff",
                         }}
                       >
                         <ToolGroupIcon group={group.key} />
                       </span>
                       <span
                         style={{
-                          maxWidth: "68px",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
                           whiteSpace: "nowrap",
                         }}
                       >
@@ -856,13 +851,10 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                       </span>
                       <span
                         style={{
-                          fontSize: "10px",
+                          fontSize: "11px",
                           transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
                           transition: "transform 160ms ease",
                           color: "#ff4d78",
-                          position: "absolute",
-                          right: "8px",
-                          bottom: "8px",
                         }}
                       >
                         ▼
@@ -874,7 +866,7 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                 <div
                   style={{
                     marginLeft: "auto",
-                    padding: "0 14px",
+                    padding: "0 4px 0 8px",
                     display: "flex",
                     alignItems: "center",
                     color: "#8ea3b7",
@@ -894,13 +886,13 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                 <div
                   style={{
                     position: "absolute",
-                    top: "calc(100% - 2px)",
+                    top: "calc(100% + 6px)",
                     left: 0,
-                    zIndex: 10,
+                    zIndex: 30,
                     borderRadius: "18px",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    border: "1px solid rgba(88, 196, 220, 0.16)",
                     background:
-                      "linear-gradient(180deg, rgba(65, 66, 79, 0.98), rgba(52, 53, 66, 0.98))",
+                      "linear-gradient(180deg, rgba(15, 21, 33, 0.98), rgba(10, 18, 30, 0.98))",
                     padding: "12px 12px 10px",
                     display: "grid",
                     gap: "12px",
@@ -930,7 +922,7 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                       <ToolGroupIcon group={openToolGroup} />
                       {openToolGroup}
                     </div>
-                    <div style={{ color: "#c4cad4", fontSize: "11px" }}>
+                    <div style={{ color: "#6f8594", fontSize: "11px" }}>
                       {GROUP_DESCRIPTIONS[openToolGroup]}
                     </div>
                   </div>
@@ -981,16 +973,16 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                                 gap: "12px",
                                 padding: "0 12px",
                                 background: isActive
-                                  ? "linear-gradient(180deg, rgba(255, 76, 119, 0.2), rgba(155, 45, 76, 0.24))"
-                                  : "rgba(255, 255, 255, 0.02)",
+                                  ? "linear-gradient(180deg, rgba(88, 196, 220, 0.22), rgba(42, 108, 122, 0.32))"
+                                  : "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
                                 color: isActive ? "#fff1f4" : "#dff6ff",
                                 border: isActive
-                                  ? "1px solid rgba(255, 110, 148, 0.48)"
-                                  : "1px solid transparent",
+                                  ? "1px solid rgba(143, 223, 243, 0.48)"
+                                  : "1px solid rgba(88, 196, 220, 0.2)",
                                 borderRadius: "10px",
                                 cursor: "pointer",
                                 boxShadow: isActive
-                                  ? "0 12px 28px rgba(235, 55, 99, 0.18)"
+                                  ? "0 12px 28px rgba(88, 196, 220, 0.18)"
                                   : "none",
                                 textAlign: "left",
                               }}
@@ -1008,7 +1000,7 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                               </span>
                               <span
                                 style={{
-                                  color: isActive ? "#ffd7e0" : "#9099aa",
+                                  color: isActive ? "#dff6ff" : "#7f9aad",
                                   fontSize: "11px",
                                 }}
                               >
