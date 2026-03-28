@@ -298,14 +298,14 @@ const GROUP_DESCRIPTIONS: Record<ToolGroupKey, string> = {
 
 function getToolbarGridColumns(itemCount: number) {
   if (itemCount <= 4) {
-    return "repeat(2, minmax(0, 1fr))";
+    return "repeat(2, minmax(56px, 64px))";
   }
 
   if (itemCount <= 9) {
-    return "repeat(3, minmax(0, 1fr))";
+    return "repeat(3, minmax(56px, 64px))";
   }
 
-  return "repeat(4, minmax(0, 1fr))";
+  return "repeat(4, minmax(56px, 64px))";
 }
 
 interface StudyViewerClientProps {
@@ -827,17 +827,16 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                           isActiveGroup || isOpen
                             ? "1px solid rgba(126, 224, 161, 0.38)"
                             : "1px solid rgba(88, 196, 220, 0.16)",
-                        padding: "9px 12px",
-                        minWidth: "unset",
-                        minHeight: "unset",
+                        width: "72px",
+                        minWidth: "72px",
+                        height: "72px",
                         borderRadius: "12px",
                         cursor: "pointer",
-                        fontSize: "12px",
-                        display: "inline-flex",
-                        justifyItems: "unset",
-                        alignContent: "unset",
-                        alignItems: "center",
-                        gap: "7px",
+                        fontSize: "11px",
+                        display: "grid",
+                        justifyItems: "center",
+                        alignContent: "center",
+                        gap: "6px",
                         flexShrink: 0,
                         position: "relative",
                         boxShadow:
@@ -856,17 +855,24 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                       </span>
                       <span
                         style={{
+                          maxWidth: "52px",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
                           whiteSpace: "nowrap",
+                          lineHeight: 1,
                         }}
                       >
                         {group.label}
                       </span>
                       <span
                         style={{
-                          fontSize: "11px",
+                          fontSize: "10px",
                           transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
                           transition: "transform 160ms ease",
                           color: "#ff4d78",
+                          position: "absolute",
+                          right: "8px",
+                          bottom: "8px",
                         }}
                       >
                         ▼
@@ -982,10 +988,13 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                                 });
                               }}
                               style={{
-                                minHeight: "48px",
+                                width: "64px",
+                                height: "64px",
                                 display: "grid",
-                                placeItems: "center",
-                                padding: 0,
+                                justifyItems: "center",
+                                alignContent: "center",
+                                gap: "6px",
+                                padding: "6px 4px 5px",
                                 background: isActive
                                   ? "linear-gradient(180deg, rgba(88, 196, 220, 0.22), rgba(42, 108, 122, 0.32))"
                                   : "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
@@ -1002,6 +1011,19 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                               }}
                             >
                               <ToolbarGlyph item={item.key} />
+                              <span
+                                style={{
+                                  maxWidth: "52px",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                  fontSize: "10px",
+                                  lineHeight: 1,
+                                  color: isActive ? "#f4fbff" : "#cfe5ef",
+                                }}
+                              >
+                                {item.label}
+                              </span>
                             </button>
 
                             {hoveredToolbarItem === itemId ? (
