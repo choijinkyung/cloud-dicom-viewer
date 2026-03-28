@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as cornerstone from "@cornerstonejs/core";
 import type { StackViewport } from "@cornerstonejs/core";
 
@@ -36,6 +36,13 @@ interface DicomViewportProps {
   currentImageIndex?: number;
   instanceNumber?: number | null;
   seriesDescription?: string | null;
+  patientName?: string | null;
+  patientMrn?: string | null;
+  studyDate?: string | null;
+  studyDescription?: string | null;
+  modalitySummary?: string | null;
+  accessionNumber?: string | null;
+  studyStatus?: string | null;
   activeTool: ViewerTool | null;
   utilityActionRequest?: {
     type: ViewerUtilityAction;
@@ -50,6 +57,13 @@ export function DicomViewport({
   currentImageIndex = 0,
   instanceNumber,
   seriesDescription,
+  patientName,
+  patientMrn,
+  studyDate,
+  studyDescription,
+  modalitySummary,
+  accessionNumber,
+  studyStatus,
   activeTool,
   utilityActionRequest,
   onImageIndexChange,
@@ -74,6 +88,11 @@ export function DicomViewport({
     type: "FIT" as const,
     imageArea: [1, 1] as [number, number],
     storeAsInitialCamera: true,
+  });
+  const [overlayStats, setOverlayStats] = useState({
+    dimensions: "-- x --",
+    ww: "--",
+    wc: "--",
   });
   const touchStateRef = useRef<{
     tracking: boolean;
@@ -172,6 +191,59 @@ export function DicomViewport({
     };
   };
 
+  const updateOverlayStats = () => {
+    const renderingEngine = renderingEngineRef.current;
+    const viewport = renderingEngine?.getViewport(viewportId) as
+      | (StackViewport & {
+          getProperties?: () => {
+            voiRange?: {
+              lower?: number;
+              upper?: number;
+            };
+          };
+        })
+      | undefined;
+
+    if (!viewport) {
+      return;
+    }
+
+    const imageData = viewport.getImageData() as
+      | {
+          dimensions?: number[];
+        }
+      | undefined;
+    const properties = viewport.getProperties?.();
+    const voiRange = properties?.voiRange;
+    const lower = voiRange?.lower;
+    const upper = voiRange?.upper;
+    const ww =
+      typeof lower === "number" && typeof upper === "number"
+        ? Math.round(upper - lower).toString()
+        : "--";
+    const wc =
+      typeof lower === "number" && typeof upper === "number"
+        ? Math.round((upper + lower) / 2).toString()
+        : "--";
+    const dimensions =
+      typeof imageData?.dimensions?.[0] === "number" &&
+      typeof imageData?.dimensions?.[1] === "number"
+        ? `${imageData.dimensions[0]} x ${imageData.dimensions[1]}`
+        : "-- x --";
+
+    setOverlayStats((current) =>
+      current.dimensions === dimensions &&
+      current.ww === ww &&
+      current.wc === wc
+        ? current
+        : {
+            dimensions,
+            ww,
+            wc,
+          },
+    );
+  };
+
   const syncViewportGeometry = () => {
     const renderingEngine = renderingEngineRef.current;
     const viewport = renderingEngine?.getViewport(viewportId) as
@@ -187,6 +259,7 @@ export function DicomViewport({
     viewport.setDisplayArea(fitDisplayAreaRef.current, true);
     viewport.render();
     updateImageFrame();
+    updateOverlayStats();
 
     if (resizeRafRef.current !== null) {
       cancelAnimationFrame(resizeRafRef.current);
@@ -208,6 +281,7 @@ export function DicomViewport({
       nextViewport.setDisplayArea(fitDisplayAreaRef.current, true);
       nextViewport.render();
       updateImageFrame();
+      updateOverlayStats();
       resizeRafRef.current = null;
     });
   };
@@ -506,6 +580,7 @@ export function DicomViewport({
       viewport.setDisplayArea(fitDisplayAreaRef.current, true);
       viewport.render();
       updateImageFrame();
+      updateOverlayStats();
 
       requestAnimationFrame(() => {
         if (!cancelled) {
@@ -666,6 +741,7 @@ export function DicomViewport({
     viewport.setDisplayArea(fitDisplayAreaRef.current, true);
     viewport.render();
     updateImageFrame();
+    updateOverlayStats();
   }, [utilityActionRequest]);
 
   useEffect(() => {
@@ -681,6 +757,11 @@ export function DicomViewport({
 
     observer.observe(element);
 
+    const handleImageRendered = () => {
+      updateImageFrame();
+      updateOverlayStats();
+    };
+
     const handleWindowResize = () => {
       syncViewportGeometry();
     };
@@ -695,12 +776,17 @@ export function DicomViewport({
     window.addEventListener("resize", handleWindowResize);
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     window.visualViewport?.addEventListener("resize", handleWindowResize);
+    element.addEventListener(cornerstone.Enums.Events.IMAGE_RENDERED, handleImageRendered);
 
     return () => {
       observer.disconnect();
       window.removeEventListener("resize", handleWindowResize);
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
       window.visualViewport?.removeEventListener("resize", handleWindowResize);
+      element.removeEventListener(
+        cornerstone.Enums.Events.IMAGE_RENDERED,
+        handleImageRendered,
+      );
     };
   }, []);
 
@@ -741,12 +827,12 @@ export function DicomViewport({
       <div
         style={{
           position: "absolute",
-          top: "18px",
-          left: "18px",
+          top: "16px",
+          left: "16px",
           zIndex: 3,
           padding: "8px 10px",
           borderRadius: "12px",
-          background: "rgba(4, 10, 18, 0.62)",
+          background: "rgba(4, 10, 18, 0.52)",
           border: "1px solid rgba(88, 196, 220, 0.14)",
           color: "#d9dfeb",
           pointerEvents: "none",
@@ -761,15 +847,46 @@ export function DicomViewport({
             textTransform: "uppercase",
           }}
         >
-          Stack View
+          {modalitySummary ?? "DICOM"} Viewer
         </p>
-        <p style={{ margin: "6px 0 0", fontSize: "15px", color: "#f3f7fb" }}>
-          {seriesDescription ?? "N/A"}
+        <p style={{ margin: "6px 0 0", fontSize: "14px", color: "#f3f7fb" }}>
+          {patientName ?? "Unknown Patient"}
         </p>
-        <p style={{ margin: "5px 0 0", color: "#98a2b3", fontSize: "11px" }}>
-          {isDemoMode
-            ? "Hosted UI Demo"
-            : `Slice ${currentImageIndex + 1} / ${stackImageUrls.length}`}
+        <p style={{ margin: "4px 0 0", color: "#98a2b3", fontSize: "11px" }}>
+          {patientMrn ? `MRN ${patientMrn}` : "MRN unavailable"}
+        </p>
+      </div>
+      <div
+        style={{
+          position: "absolute",
+          top: "16px",
+          right: "16px",
+          zIndex: 3,
+          padding: "8px 10px",
+          borderRadius: "12px",
+          background: "rgba(4, 10, 18, 0.52)",
+          border: "1px solid rgba(88, 196, 220, 0.14)",
+          color: "#d9dfeb",
+          pointerEvents: "none",
+          textAlign: "right",
+        }}
+      >
+        <p
+          style={{
+            margin: 0,
+            color: "#8fdff3",
+            fontSize: "10px",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+          }}
+        >
+          Study
+        </p>
+        <p style={{ margin: "6px 0 0", fontSize: "14px", color: "#f3f7fb" }}>
+          {accessionNumber ?? "No accession"}
+        </p>
+        <p style={{ margin: "4px 0 0", color: "#98a2b3", fontSize: "11px" }}>
+          {overlayStats.dimensions} {studyDate ? `• ${studyDate}` : ""}
         </p>
       </div>
       {isDemoMode ? (
@@ -817,11 +934,11 @@ export function DicomViewport({
       <div
         style={{
           position: "absolute",
-          right: "18px",
-          bottom: "18px",
+          left: "16px",
+          bottom: "16px",
           zIndex: 3,
-          padding: "7px 10px",
-          borderRadius: "999px",
+          padding: "8px 10px",
+          borderRadius: "12px",
           background: "rgba(4, 10, 18, 0.62)",
           border: "1px solid rgba(126, 224, 161, 0.16)",
           color: "#d9dfeb",
@@ -829,9 +946,59 @@ export function DicomViewport({
           pointerEvents: "none",
         }}
       >
-        {isDemoMode
-          ? "Local stack required for live DICOM"
-          : `Wheel Scroll • Image ${instanceNumber ?? currentImageIndex + 1}`}
+        <p
+          style={{
+            margin: 0,
+            color: "#8fdff3",
+            fontSize: "10px",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+          }}
+        >
+          {seriesDescription ?? "Series"}
+        </p>
+        <p style={{ margin: "6px 0 0", color: "#f3f7fb", fontSize: "12px" }}>
+          WW {overlayStats.ww} / WC {overlayStats.wc}
+        </p>
+        <p style={{ margin: "4px 0 0", color: "#98a2b3", fontSize: "11px" }}>
+          {studyDescription ?? "Untitled study"}
+        </p>
+      </div>
+      <div
+        style={{
+          position: "absolute",
+          right: "16px",
+          bottom: "16px",
+          zIndex: 3,
+          padding: "8px 10px",
+          borderRadius: "12px",
+          background: "rgba(4, 10, 18, 0.62)",
+          border: "1px solid rgba(126, 224, 161, 0.16)",
+          color: "#d9dfeb",
+          fontSize: "10px",
+          pointerEvents: "none",
+          textAlign: "right",
+        }}
+      >
+        <p
+          style={{
+            margin: 0,
+            color: "#8fdff3",
+            fontSize: "10px",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+          }}
+        >
+          Status
+        </p>
+        <p style={{ margin: "6px 0 0", color: "#f3f7fb", fontSize: "12px" }}>
+          {studyStatus ?? "Active"}
+        </p>
+        <p style={{ margin: "4px 0 0", color: "#98a2b3", fontSize: "11px" }}>
+          {isDemoMode
+            ? "Hosted UI Demo"
+            : `Slice ${currentImageIndex + 1} / ${stackImageUrls.length} • Image ${instanceNumber ?? currentImageIndex + 1}`}
+        </p>
       </div>
     </div>
   );

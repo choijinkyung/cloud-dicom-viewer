@@ -465,159 +465,6 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
         overflowX: "clip",
       }}
     >
-      <section
-        style={{
-          ...panelStyle,
-          marginBottom: "12px",
-          padding: "clamp(10px, 1.4vw, 14px)",
-          background:
-            "linear-gradient(180deg, rgba(10, 21, 36, 0.82), rgba(9, 19, 31, 0.88))",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: "18px",
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-            <div
-              style={{
-                display: "grid",
-                placeItems: "center",
-                width: "46px",
-                height: "46px",
-                borderRadius: "14px",
-                color: "#06111d",
-                fontWeight: 700,
-                background: "linear-gradient(135deg, #7ee0a1 0%, #58c4dc 100%)",
-                boxShadow: "0 10px 24px rgba(88, 196, 220, 0.28)",
-              }}
-            >
-              DV
-            </div>
-            <div>
-              <p
-                style={{
-                  margin: 0,
-                  color: "#7ee0a1",
-                  fontSize: "12px",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.12em",
-                }}
-              >
-                RT Viewer Style Workspace
-              </p>
-              <h1
-                style={{
-                  margin: "6px 0 0",
-                  color: "#f3f7fb",
-                  fontSize: "clamp(22px, 2.2vw, 28px)",
-                }}
-              >
-                {study.patient.firstName} {study.patient.lastName}
-              </h1>
-            </div>
-          </div>
-
-          <Link
-            href="/worklist"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "10px",
-              padding: "10px 14px",
-              borderRadius: "14px",
-              textDecoration: "none",
-              color: "#e9f6fb",
-              background:
-                "linear-gradient(180deg, rgba(18, 34, 54, 0.96), rgba(11, 21, 35, 0.98))",
-              border: "1px solid rgba(88, 196, 220, 0.18)",
-              boxShadow: "0 12px 28px rgba(2, 6, 16, 0.22)",
-              minWidth: "fit-content",
-            }}
-          >
-            <span
-              style={{
-                width: "28px",
-                height: "28px",
-                borderRadius: "10px",
-                display: "grid",
-                placeItems: "center",
-                background:
-                  "linear-gradient(180deg, rgba(126, 224, 161, 0.18), rgba(88, 196, 220, 0.18))",
-                color: "#8fdff3",
-                flexShrink: 0,
-              }}
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M6 3L1.5 8 6 13" />
-                <path d="M2 8h12" />
-              </svg>
-            </span>
-            <span style={{ display: "grid", gap: "2px" }}>
-              <span
-                style={{
-                  fontSize: "10px",
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  color: "#8fbccc",
-                }}
-              >
-                Navigator
-              </span>
-              <span style={{ fontSize: "13px", fontWeight: 600 }}>
-                Back to Worklist
-              </span>
-            </span>
-          </Link>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-              gap: "10px",
-              minWidth: isCompactLayout ? "100%" : "min(100%, 560px)",
-              flex: "1 1 520px",
-              width: "100%",
-            }}
-          >
-            {[
-              `MRN ${study.patient.mrn ?? "UNKNOWN"}`,
-              `${study.modalitySummary ?? "N/A"} | ${study.studyDescription ?? "Untitled Study"}`,
-              `Accession ${study.accessionNumber ?? "UNKNOWN"} | ${study.status}`,
-            ].map((copy) => (
-              <div
-                key={copy}
-                style={{
-                  padding: "12px 14px",
-                  borderRadius: "16px",
-                  background:
-                    "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
-                  color: "#e3f4fb",
-                  border: "1px solid rgba(88, 196, 220, 0.16)",
-                  boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.02)",
-                }}
-              >
-                {copy}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <div
         style={{
           display: "grid",
@@ -913,6 +760,37 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                     flexShrink: 0,
                   }}
                 >
+                  <Link
+                    href="/worklist"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "6px 10px",
+                      borderRadius: "999px",
+                      textDecoration: "none",
+                      color: "#dff6ff",
+                      background:
+                        "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
+                      border: "1px solid rgba(88, 196, 220, 0.16)",
+                      fontSize: "11px",
+                    }}
+                  >
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M6 3L1.5 8 6 13" />
+                      <path d="M2 8h12" />
+                    </svg>
+                    Worklist
+                  </Link>
                   {(
                     [
                       { key: "metadata", label: "Study" },
@@ -1305,6 +1183,13 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
             currentImageIndex={currentImageIndex}
             instanceNumber={selectedInstance?.instanceNumber}
             seriesDescription={selectedSeries?.description}
+            patientName={`${study.patient.firstName} ${study.patient.lastName}`}
+            patientMrn={study.patient.mrn}
+            studyDate={study.studyDate}
+            studyDescription={study.studyDescription}
+            modalitySummary={study.modalitySummary}
+            accessionNumber={study.accessionNumber}
+            studyStatus={study.status}
             activeTool={activeTool}
             utilityActionRequest={utilityActionRequest}
             onImageIndexChange={handleImageIndexChange}
