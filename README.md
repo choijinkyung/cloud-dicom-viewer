@@ -20,7 +20,7 @@ Most portfolio viewers stop at a pretty mockup. This one goes further:
 
 ## Demo Experience
 
-- Hosted UI demo: free Vercel deployment with fallback worklist and study data for portfolio review
+- Hosted UI demo: free Vercel deployment with fallback worklist, study data, and bundled sample DICOM for portfolio review
 - Local full stack: live Orthanc-backed DICOM loading, API integration, and interactive viewer rendering
 
 This split keeps the public demo easy to open while preserving a real end-to-end medical imaging workflow in local development.

@@ -111,15 +111,18 @@ export const demoStudyDetails: Record<string, StudyDetail> = {
         id: "demo-series-ct-1",
         seriesInstanceUid: "demo-series-ct-1",
         modality: "CT",
-        description: "Axial Lung Window",
+        description: "Bundled Sample DICOM",
         seriesNumber: 1,
-        instanceCount: 18,
-        instances: Array.from({ length: 18 }, (_, index) => ({
-          id: `demo-ct-1-${index + 1}`,
-          sopInstanceUid: `demo-ct-1-${index + 1}`,
-          instanceNumber: index + 1,
-          sopClassUid: null,
-        })),
+        instanceCount: 1,
+        instances: [
+          {
+            id: "demo-ct-1-1",
+            sopInstanceUid: "demo-ct-1-1",
+            instanceNumber: 1,
+            sopClassUid: null,
+            imageUrl: "/TESTDCM/series-000001/image-000001.dcm",
+          },
+        ],
       },
       {
         id: "demo-series-ct-2",
