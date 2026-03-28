@@ -4,6 +4,270 @@ import { useEffect, useState } from "react";
 import type { StudyDetail } from "@dicom-viewer/shared";
 import { DicomViewport } from "./DicomViewport";
 
+type ViewerTool =
+  | "WL"
+  | "Zoom"
+  | "Pan"
+  | "Rotate"
+  | "Magnify"
+  | "Cine"
+  | "Length"
+  | "Height"
+  | "Probe"
+  | "Angle"
+  | "Cobb"
+  | "Bidirectional"
+  | "RectROI"
+  | "EllipseROI"
+  | "CircleROI"
+  | "Arrow"
+  | "KeyImage";
+
+type ViewerUtilityAction = "Reset" | "Fit" | "Clear";
+type ToolGroupKey = "Navigate" | "Measure" | "Annotate" | "Utility";
+
+type ToolbarItem =
+  | { kind: "tool"; key: ViewerTool; label: string }
+  | { kind: "action"; key: ViewerUtilityAction; label: string };
+
+const TOOL_GROUPS: Array<{
+  key: ToolGroupKey;
+  label: string;
+  items: ToolbarItem[];
+}> = [
+  {
+    key: "Navigate",
+    label: "Navigate",
+    items: [
+      { kind: "tool", key: "WL", label: "Window / Level" },
+      { kind: "tool", key: "Zoom", label: "Zoom" },
+      { kind: "tool", key: "Pan", label: "Pan" },
+      { kind: "tool", key: "Rotate", label: "Rotate" },
+      { kind: "tool", key: "Magnify", label: "Magnify" },
+      { kind: "tool", key: "Cine", label: "Stack Scroll" },
+    ],
+  },
+  {
+    key: "Measure",
+    label: "Measure",
+    items: [
+      { kind: "tool", key: "Length", label: "Length" },
+      { kind: "tool", key: "Height", label: "Height" },
+      { kind: "tool", key: "Probe", label: "Probe" },
+      { kind: "tool", key: "Angle", label: "Angle" },
+      { kind: "tool", key: "Cobb", label: "Cobb Angle" },
+      { kind: "tool", key: "Bidirectional", label: "Bidirectional" },
+      { kind: "tool", key: "RectROI", label: "Rectangle ROI" },
+      { kind: "tool", key: "EllipseROI", label: "Ellipse ROI" },
+      { kind: "tool", key: "CircleROI", label: "Circle ROI" },
+    ],
+  },
+  {
+    key: "Annotate",
+    label: "Annotate",
+    items: [
+      { kind: "tool", key: "Arrow", label: "Arrow Annotate" },
+      { kind: "tool", key: "KeyImage", label: "Key Image" },
+    ],
+  },
+  {
+    key: "Utility",
+    label: "Utility",
+    items: [
+      { kind: "action", key: "Reset", label: "Reset View" },
+      { kind: "action", key: "Fit", label: "Fit to Window" },
+      { kind: "action", key: "Clear", label: "Clear Markups" },
+    ],
+  },
+];
+
+function ToolbarGlyph({
+  item,
+}: {
+  item: ViewerTool | ViewerUtilityAction;
+}) {
+  const common = {
+    width: 16,
+    height: 16,
+    viewBox: "0 0 16 16",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.5,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+
+  switch (item) {
+    case "WL":
+      return (
+        <svg {...common}>
+          <circle cx="8" cy="8" r="5" />
+          <path d="M8 3v10M3 8h10" />
+        </svg>
+      );
+    case "Zoom":
+      return (
+        <svg {...common}>
+          <circle cx="7" cy="7" r="4" />
+          <path d="M10.5 10.5L14 14M7 5v4M5 7h4" />
+        </svg>
+      );
+    case "Pan":
+      return (
+        <svg {...common}>
+          <path d="M8 2v12M2 8h12M8 2l2 2M8 2L6 4M14 8l-2 2M14 8l-2-2M8 14l2-2M8 14l-2-2M2 8l2 2M2 8l2-2" />
+        </svg>
+      );
+    case "Rotate":
+      return (
+        <svg {...common}>
+          <path d="M11 5V2l2 2-2 2M12 8a4 4 0 1 1-1.2-2.8" />
+        </svg>
+      );
+    case "Magnify":
+      return (
+        <svg {...common}>
+          <rect x="2.5" y="2.5" width="8" height="8" rx="1.5" />
+          <path d="M10.5 10.5L13.5 13.5" />
+        </svg>
+      );
+    case "Cine":
+      return (
+        <svg {...common}>
+          <path d="M6 4l5 4-5 4V4z" />
+          <rect x="2.5" y="3" width="1.5" height="10" />
+        </svg>
+      );
+    case "Length":
+      return (
+        <svg {...common}>
+          <path d="M3 12L13 4M3 12h3M13 4v3" />
+        </svg>
+      );
+    case "Height":
+      return (
+        <svg {...common}>
+          <path d="M8 2v12M6 4l2-2 2 2M6 12l2 2 2-2" />
+        </svg>
+      );
+    case "Probe":
+      return (
+        <svg {...common}>
+          <circle cx="6" cy="6" r="2.5" />
+          <path d="M8 8l5 5" />
+        </svg>
+      );
+    case "Angle":
+      return (
+        <svg {...common}>
+          <path d="M3 12L8 4l5 8M8 4v8" />
+        </svg>
+      );
+    case "Cobb":
+      return (
+        <svg {...common}>
+          <path d="M2.5 5h11M3.5 11h9M5 5l-2 2M11 11l2-2" />
+        </svg>
+      );
+    case "Bidirectional":
+      return (
+        <svg {...common}>
+          <path d="M3 5h10M8 5v6M3 11h10" />
+        </svg>
+      );
+    case "RectROI":
+      return (
+        <svg {...common}>
+          <rect x="3" y="4" width="10" height="8" rx="1" />
+        </svg>
+      );
+    case "EllipseROI":
+      return (
+        <svg {...common}>
+          <ellipse cx="8" cy="8" rx="5" ry="3.5" />
+        </svg>
+      );
+    case "CircleROI":
+      return (
+        <svg {...common}>
+          <circle cx="8" cy="8" r="4.5" />
+        </svg>
+      );
+    case "Arrow":
+      return (
+        <svg {...common}>
+          <path d="M3 13L13 3M13 3H9M13 3v4" />
+        </svg>
+      );
+    case "KeyImage":
+      return (
+        <svg {...common}>
+          <path d="M8 2l1.6 3.2 3.4.5-2.5 2.4.6 3.4L8 9.8 4.9 11.5l.6-3.4L3 5.7l3.4-.5L8 2z" />
+        </svg>
+      );
+    case "Reset":
+      return (
+        <svg {...common}>
+          <path d="M5 4H2v3M2.5 6A5.5 5.5 0 1 0 8 2.5" />
+        </svg>
+      );
+    case "Fit":
+      return (
+        <svg {...common}>
+          <path d="M5.5 2.5h-3v3M10.5 2.5h3v3M5.5 13.5h-3v-3M10.5 13.5h3v-3" />
+          <rect x="5" y="5" width="6" height="6" rx="1" />
+        </svg>
+      );
+    case "Clear":
+      return (
+        <svg {...common}>
+          <path d="M3 4h10M6 4V3h4v1M5 6.5v4M8 6.5v4M11 6.5v4M4.5 4l.7 8.5h5.6l.7-8.5" />
+        </svg>
+      );
+  }
+}
+
+function ToolGroupIcon({ group }: { group: ToolGroupKey }) {
+  const common = {
+    width: 14,
+    height: 14,
+    viewBox: "0 0 16 16",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.5,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+
+  switch (group) {
+    case "Navigate":
+      return (
+        <svg {...common}>
+          <path d="M3 8h10M8 3v10M8 3l2 2M8 3L6 5M13 8l-2 2M13 8l-2-2M8 13l2-2M8 13l-2-2M3 8l2 2M3 8l2-2" />
+        </svg>
+      );
+    case "Measure":
+      return (
+        <svg {...common}>
+          <path d="M3 11l8-8 2 2-8 8H3v-2zM8 6l2 2" />
+        </svg>
+      );
+    case "Annotate":
+      return (
+        <svg {...common}>
+          <path d="M3 13L13 3M13 3H9M13 3v4" />
+        </svg>
+      );
+    case "Utility":
+      return (
+        <svg {...common}>
+          <path d="M8 2.5v2M8 11.5v2M2.5 8h2M11.5 8h2M4.2 4.2l1.4 1.4M10.4 10.4l1.4 1.4M11.8 4.2l-1.4 1.4M5.6 10.4l-1.4 1.4" />
+          <circle cx="8" cy="8" r="2.2" />
+        </svg>
+      );
+  }
+}
+
 interface StudyViewerClientProps {
   study: StudyDetail;
 }
@@ -20,6 +284,19 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(
     initialInstance?.id ?? null,
   );
+
+  const [activeTool, setActiveTool] = useState<ViewerTool>("WL");
+  const [activeToolGroup, setActiveToolGroup] = useState<ToolGroupKey>("Navigate");
+  const [openToolGroup, setOpenToolGroup] = useState<ToolGroupKey | null>(
+    "Navigate",
+  );
+  const [hoveredToolbarItem, setHoveredToolbarItem] = useState<string | null>(
+    null,
+  );
+  const [utilityActionRequest, setUtilityActionRequest] = useState<{
+    type: ViewerUtilityAction;
+    nonce: number;
+  } | null>(null);
 
   const selectedSeries =
     study.series.find((series) => series.id === selectedSeriesId) ??
@@ -131,9 +408,9 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                   color: "#7ee0a1",
                   fontSize: "12px",
                   textTransform: "uppercase",
-                letterSpacing: "0.12em",
-              }}
-            >
+                  letterSpacing: "0.12em",
+                }}
+              >
                 RT Viewer Style Workspace
               </p>
               <h1
@@ -335,29 +612,247 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
           <div
             style={{
               ...panelStyle,
-              padding: "12px 14px",
+              padding: "10px 14px 14px",
               width: "100%",
             }}
           >
-            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-              {["WL", "Zoom", "Pan", "Length", "ROI", "Cine"].map((tool) => (
-                <button
-                  key={tool}
-                  type="button"
+            <div style={{ display: "grid", gap: "10px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "8px",
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                }}
+              >
+                {TOOL_GROUPS.map((group) => {
+                  const isActiveGroup = activeToolGroup === group.key;
+                  const isOpen = openToolGroup === group.key;
+
+                  return (
+                    <button
+                      key={group.key}
+                      type="button"
+                      onClick={() => {
+                        setActiveToolGroup(group.key);
+                        setOpenToolGroup((currentGroup) =>
+                          currentGroup === group.key ? null : group.key,
+                        );
+
+                        const firstTool = group.items.find(
+                          (item) => item.kind === "tool",
+                        );
+
+                        if (
+                          firstTool &&
+                          !group.items.some(
+                            (item) =>
+                              item.kind === "tool" && item.key === activeTool,
+                          )
+                        ) {
+                          setActiveTool(firstTool.key);
+                        }
+                      }}
+                      style={{
+                        background:
+                          isActiveGroup || isOpen
+                            ? "linear-gradient(180deg, rgba(126, 224, 161, 0.18), rgba(67, 143, 104, 0.24))"
+                            : "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
+                        color:
+                          isActiveGroup || isOpen ? "#f3fffb" : "#a7cad8",
+                        border:
+                          isActiveGroup || isOpen
+                            ? "1px solid rgba(126, 224, 161, 0.38)"
+                            : "1px solid rgba(88, 196, 220, 0.16)",
+                        padding: "9px 12px",
+                        borderRadius: "12px",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                        letterSpacing: "0.04em",
+                        textTransform: "uppercase",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        boxShadow:
+                          isActiveGroup || isOpen
+                            ? "0 12px 24px rgba(126, 224, 161, 0.12)"
+                            : "none",
+                      }}
+                    >
+                      <ToolGroupIcon group={group.key} />
+                      {group.label}
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+                          transition: "transform 160ms ease",
+                        }}
+                      >
+                        ▼
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {openToolGroup ? (
+                <div
                   style={{
+                    borderRadius: "18px",
+                    border: "1px solid rgba(88, 196, 220, 0.16)",
                     background:
-                      "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
-                    color: "#dff6ff",
-                    border: "1px solid rgba(88, 196, 220, 0.2)",
-                    padding: "8px 11px",
-                    borderRadius: "12px",
-                    cursor: "pointer",
-                    fontSize: "13px",
+                      "linear-gradient(180deg, rgba(15, 21, 33, 0.98), rgba(10, 18, 30, 0.98))",
+                    padding: "12px",
+                    display: "grid",
+                    gap: "10px",
+                    boxShadow: "0 18px 40px rgba(0, 0, 0, 0.26)",
                   }}
                 >
-                  {tool}
-                </button>
-              ))}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "12px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        color: "#cdebf5",
+                        fontSize: "12px",
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      <ToolGroupIcon group={openToolGroup} />
+                      {openToolGroup} Tools
+                    </div>
+                    <div style={{ color: "#6f8594", fontSize: "11px" }}>
+                      Hover icons to preview tool names
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "8px",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    {TOOL_GROUPS.find((group) => group.key === openToolGroup)?.items.map(
+                      (item) => {
+                        const isTool = item.kind === "tool";
+                        const isActive =
+                          isTool && activeTool === item.key;
+                        const itemId = `${openToolGroup}-${item.key}`;
+
+                        return (
+                          <div
+                            key={item.key}
+                            style={{
+                              position: "relative",
+                              display: "inline-flex",
+                            }}
+                            onMouseEnter={() => setHoveredToolbarItem(itemId)}
+                            onMouseLeave={() => setHoveredToolbarItem(null)}
+                          >
+                            <button
+                              type="button"
+                              aria-label={item.label}
+                              onClick={() => {
+                                if (isTool) {
+                                  setActiveTool(item.key);
+                                  setActiveToolGroup(openToolGroup);
+                                  return;
+                                }
+
+                                setUtilityActionRequest({
+                                  type: item.key,
+                                  nonce: Date.now(),
+                                });
+                              }}
+                              style={{
+                                width: "42px",
+                                height: "42px",
+                                display: "grid",
+                                placeItems: "center",
+                                background: isActive
+                                  ? "linear-gradient(180deg, rgba(235, 55, 99, 0.22), rgba(143, 32, 63, 0.28))"
+                                  : "linear-gradient(180deg, rgba(28, 36, 52, 0.98), rgba(16, 22, 34, 0.98))",
+                                color: isActive ? "#fff1f4" : "#dff6ff",
+                                border: isActive
+                                  ? "1px solid rgba(255, 110, 148, 0.48)"
+                                  : "1px solid rgba(88, 196, 220, 0.2)",
+                                borderRadius: "10px",
+                                cursor: "pointer",
+                                boxShadow: isActive
+                                  ? "0 12px 28px rgba(235, 55, 99, 0.18)"
+                                  : "none",
+                              }}
+                            >
+                              <ToolbarGlyph item={item.key} />
+                            </button>
+
+                            {hoveredToolbarItem === itemId ? (
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  left: "50%",
+                                  bottom: "calc(100% + 10px)",
+                                  transform: "translateX(-50%)",
+                                  pointerEvents: "none",
+                                  zIndex: 4,
+                                  padding: "8px 10px",
+                                  borderRadius: "10px",
+                                  border:
+                                    "1px solid rgba(255, 255, 255, 0.08)",
+                                  background:
+                                    "linear-gradient(180deg, rgba(19, 24, 37, 0.98), rgba(8, 12, 20, 0.98))",
+                                  color: "#eff7fb",
+                                  fontSize: "12px",
+                                  whiteSpace: "nowrap",
+                                  boxShadow: "0 16px 40px rgba(0, 0, 0, 0.34)",
+                                }}
+                              >
+                                {item.label}
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    left: "50%",
+                                    top: "100%",
+                                    width: "10px",
+                                    height: "10px",
+                                    background: "rgba(8, 12, 20, 0.98)",
+                                    borderRight:
+                                      "1px solid rgba(255, 255, 255, 0.08)",
+                                    borderBottom:
+                                      "1px solid rgba(255, 255, 255, 0.08)",
+                                    transform:
+                                      "translate(-50%, -50%) rotate(45deg)",
+                                  }}
+                                />
+                              </div>
+                            ) : null}
+                          </div>
+                        );
+                      },
+                    )}
+                  </div>
+                </div>
+              ) : null}
+
+              <p
+                style={{
+                  margin: 0,
+                  color: "#8ea3b7",
+                  fontSize: "12px",
+                }}
+              >
+                Active tool: <span style={{ color: "#dff6ff" }}>{activeTool}</span>
+              </p>
             </div>
           </div>
 
@@ -367,6 +862,8 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
             currentImageIndex={currentImageIndex}
             instanceNumber={selectedInstance?.instanceNumber}
             seriesDescription={selectedSeries?.description}
+            activeTool={activeTool}
+            utilityActionRequest={utilityActionRequest}
             onImageIndexChange={handleImageIndexChange}
           />
 
@@ -555,82 +1052,82 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                 }}
               >
                 <div
-                style={{
-                  ...panelStyle,
-                  padding: "14px",
-                }}
-              >
-                <h2
                   style={{
-                    marginTop: 0,
-                    marginBottom: "10px",
-                    fontSize: "16px",
-                    color: "#f3f7fb",
+                    ...panelStyle,
+                    padding: "14px",
                   }}
                 >
-                  Study Metadata
-                </h2>
-                {[
-                  `Study Date: ${study.studyDate ?? "N/A"}`,
-                  `Received At: ${study.receivedAt}`,
-                  `Series Count: ${study.series.length}`,
-                  `Selected Series UID: ${selectedSeries?.seriesInstanceUid ?? "N/A"}`,
-                ].map((value) => (
-                  <p
-                    key={value}
+                  <h2
                     style={{
-                      color: "#d7ecf6",
-                      margin: "0 0 8px",
-                      fontSize: "13px",
-                      lineHeight: 1.45,
+                      marginTop: 0,
+                      marginBottom: "10px",
+                      fontSize: "16px",
+                      color: "#f3f7fb",
                     }}
                   >
-                    {value}
-                  </p>
-                ))}
+                    Study Metadata
+                  </h2>
+                  {[
+                    `Study Date: ${study.studyDate ?? "N/A"}`,
+                    `Received At: ${study.receivedAt}`,
+                    `Series Count: ${study.series.length}`,
+                    `Selected Series UID: ${selectedSeries?.seriesInstanceUid ?? "N/A"}`,
+                  ].map((value) => (
+                    <p
+                      key={value}
+                      style={{
+                        color: "#d7ecf6",
+                        margin: "0 0 8px",
+                        fontSize: "13px",
+                        lineHeight: 1.45,
+                      }}
+                    >
+                      {value}
+                    </p>
+                  ))}
                 </div>
 
                 <div
-                style={{
-                  ...panelStyle,
-                  padding: "14px",
-                  minWidth: 0,
-                }}
-              >
-                <h2
                   style={{
-                    marginTop: 0,
-                    marginBottom: "10px",
-                    fontSize: "16px",
-                    color: "#f3f7fb",
+                    ...panelStyle,
+                    padding: "14px",
+                    minWidth: 0,
                   }}
                 >
-                  Reports
-                </h2>
-                {study.reports.length > 0 ? (
-                  study.reports.map((report) => (
-                    <div key={report.id} style={{ color: "#d7ecf6" }}>
-                      <p style={{ margin: "0 0 8px", fontSize: "13px" }}>
-                        Status: {report.status}
-                      </p>
-                      <pre
-                        style={{
-                          whiteSpace: "pre-wrap",
-                          color: "#8fbccc",
-                          margin: 0,
-                          maxHeight: "168px",
-                          overflow: "auto",
-                          fontSize: "12px",
-                          lineHeight: 1.45,
-                        }}
-                      >
-                        {JSON.stringify(report.content, null, 2)}
-                      </pre>
-                    </div>
-                  ))
-                ) : (
-                  <p style={{ color: "#d7ecf6" }}>No reports yet</p>
-                )}
+                  <h2
+                    style={{
+                      marginTop: 0,
+                      marginBottom: "10px",
+                      fontSize: "16px",
+                      color: "#f3f7fb",
+                    }}
+                  >
+                    Reports
+                  </h2>
+                  {study.reports.length > 0 ? (
+                    study.reports.map((report) => (
+                      <div key={report.id} style={{ color: "#d7ecf6" }}>
+                        <p style={{ margin: "0 0 8px", fontSize: "13px" }}>
+                          Status: {report.status}
+                        </p>
+                        <pre
+                          style={{
+                            whiteSpace: "pre-wrap",
+                            color: "#8fbccc",
+                            margin: 0,
+                            maxHeight: "168px",
+                            overflow: "auto",
+                            fontSize: "12px",
+                            lineHeight: 1.45,
+                          }}
+                        >
+                          {JSON.stringify(report.content, null, 2)}
+                        </pre>
+                      </div>
+                    ))
+                  ) : (
+                    <p style={{ color: "#d7ecf6" }}>No reports yet</p>
+                  )}
                 </div>
               </div>
             </div>

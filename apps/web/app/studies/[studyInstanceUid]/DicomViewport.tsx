@@ -4,12 +4,42 @@ import { useEffect, useRef } from "react";
 import * as cornerstone from "@cornerstonejs/core";
 import type { StackViewport } from "@cornerstonejs/core";
 
+type ViewerTool =
+  | "WL"
+  | "Zoom"
+  | "Pan"
+  | "Rotate"
+  | "Magnify"
+  | "Cine"
+  | "Length"
+  | "Height"
+  | "Probe"
+  | "Angle"
+  | "Cobb"
+  | "Bidirectional"
+  | "RectROI"
+  | "EllipseROI"
+  | "CircleROI"
+  | "Arrow"
+  | "KeyImage";
+
+type ViewerUtilityAction = "Reset" | "Fit" | "Clear";
+
+const renderingEngineId = "dicom-rendering-engine";
+const viewportId = "dicom-stack-viewport";
+const toolGroupId = "dicom-stack-tool-group";
+
 interface DicomViewportProps {
   imageUrl?: string;
   stackImageUrls?: string[];
   currentImageIndex?: number;
   instanceNumber?: number | null;
   seriesDescription?: string | null;
+  activeTool: ViewerTool;
+  utilityActionRequest?: {
+    type: ViewerUtilityAction;
+    nonce: number;
+  } | null;
   onImageIndexChange?: (nextIndex: number) => void;
 }
 
@@ -19,11 +49,17 @@ export function DicomViewport({
   currentImageIndex = 0,
   instanceNumber,
   seriesDescription,
+  activeTool,
+  utilityActionRequest,
   onImageIndexChange,
 }: DicomViewportProps) {
   const isDemoMode = stackImageUrls.length === 0;
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const renderingEngineRef = useRef<cornerstone.RenderingEngine | null>(null);
+  const csToolsRef = useRef<Awaited<
+    typeof import("@cornerstonejs/tools")
+  > | null>(null);
+  const toolGroupReadyRef = useRef(false);
   const wheelDeltaRef = useRef(0);
   const imageAspectRatioRef = useRef<number>(1);
   const imageFrameRef = useRef({
@@ -43,7 +79,7 @@ export function DicomViewport({
     const element = viewportRef.current;
     const renderingEngine = renderingEngineRef.current;
     const viewport = renderingEngine?.getViewport(
-      "dicom-stack-viewport",
+      viewportId,
     ) as
       | (StackViewport & {
           getImageData: () => {
@@ -130,9 +166,9 @@ export function DicomViewport({
 
   const syncViewportGeometry = () => {
     const renderingEngine = renderingEngineRef.current;
-    const viewport = renderingEngine?.getViewport(
-      "dicom-stack-viewport",
-    ) as StackViewport | undefined;
+    const viewport = renderingEngine?.getViewport(viewportId) as
+      | StackViewport
+      | undefined;
 
     if (!renderingEngine || !viewport) {
       updateImageFrame();
@@ -150,9 +186,9 @@ export function DicomViewport({
 
     resizeRafRef.current = requestAnimationFrame(() => {
       const nextRenderingEngine = renderingEngineRef.current;
-      const nextViewport = nextRenderingEngine?.getViewport(
-        "dicom-stack-viewport",
-      ) as StackViewport | undefined;
+      const nextViewport = nextRenderingEngine?.getViewport(viewportId) as
+        | StackViewport
+        | undefined;
 
       if (!nextRenderingEngine || !nextViewport) {
         updateImageFrame();
@@ -250,15 +286,17 @@ export function DicomViewport({
       const { init, RenderingEngine, Enums } = cornerstone;
       await init();
 
+      const csTools = await import("@cornerstonejs/tools");
+      csToolsRef.current = csTools;
+
       const cornerstoneDICOMImageLoader =
         await import("@cornerstonejs/dicom-image-loader");
 
+      await csTools.init();
       cornerstoneDICOMImageLoader.init({
         maxWebWorkers: 1,
       });
 
-      const renderingEngineId = "dicom-rendering-engine";
-      const viewportId = "dicom-stack-viewport";
       const stackImageIds = stackImageUrls.map((url) => `wadouri:${url}`);
 
       let renderingEngine = renderingEngineRef.current;
@@ -278,6 +316,74 @@ export function DicomViewport({
           },
         ]);
       }
+
+      const toolDefinitions = [
+        csTools.WindowLevelTool,
+        csTools.ZoomTool,
+        csTools.PanTool,
+        csTools.PlanarRotateTool,
+        csTools.MagnifyTool,
+        csTools.StackScrollTool,
+        csTools.LengthTool,
+        csTools.HeightTool,
+        csTools.ProbeTool,
+        csTools.AngleTool,
+        csTools.CobbAngleTool,
+        csTools.BidirectionalTool,
+        csTools.RectangleROITool,
+        csTools.EllipticalROITool,
+        csTools.CircleROITool,
+        csTools.ArrowAnnotateTool,
+        csTools.KeyImageTool,
+      ];
+
+      toolDefinitions.forEach((toolDefinition) => {
+        try {
+          csTools.addTool(toolDefinition);
+        } catch {
+          // Tools are global singletons and may already be registered.
+        }
+      });
+
+      let toolGroup = csTools.ToolGroupManager.getToolGroup(toolGroupId);
+
+      if (!toolGroup) {
+        toolGroup = csTools.ToolGroupManager.createToolGroup(toolGroupId);
+      }
+
+      if (!toolGroup) {
+        throw new Error("Tool group was not created.");
+      }
+
+      [
+        csTools.WindowLevelTool.toolName,
+        csTools.ZoomTool.toolName,
+        csTools.PanTool.toolName,
+        csTools.PlanarRotateTool.toolName,
+        csTools.MagnifyTool.toolName,
+        csTools.StackScrollTool.toolName,
+        csTools.LengthTool.toolName,
+        csTools.HeightTool.toolName,
+        csTools.ProbeTool.toolName,
+        csTools.AngleTool.toolName,
+        csTools.CobbAngleTool.toolName,
+        csTools.BidirectionalTool.toolName,
+        csTools.RectangleROITool.toolName,
+        csTools.EllipticalROITool.toolName,
+        csTools.CircleROITool.toolName,
+        csTools.ArrowAnnotateTool.toolName,
+        csTools.KeyImageTool.toolName,
+      ].forEach((toolName) => {
+        if (!toolGroup?.hasTool(toolName)) {
+          toolGroup?.addTool(toolName);
+        }
+      });
+
+      if (!toolGroup.getViewportIds().includes(viewportId)) {
+        toolGroup.addViewport(viewportId, renderingEngineId);
+      }
+
+      toolGroupReadyRef.current = true;
 
       console.log("Cornerstone viewport initialized", {
         imageUrl,
@@ -349,12 +455,136 @@ export function DicomViewport({
       cancelled = true;
     };
   }, [
+    activeTool,
     currentImageIndex,
     imageUrl,
     instanceNumber,
     seriesDescription,
     stackImageUrls,
   ]);
+
+  useEffect(() => {
+    const csTools = csToolsRef.current;
+
+    if (!csTools || !toolGroupReadyRef.current) {
+      return;
+    }
+
+    const toolGroup = csTools.ToolGroupManager.getToolGroup(toolGroupId);
+
+    if (!toolGroup) {
+      return;
+    }
+
+    const toolNames = [
+      csTools.WindowLevelTool.toolName,
+      csTools.ZoomTool.toolName,
+      csTools.PanTool.toolName,
+      csTools.PlanarRotateTool.toolName,
+      csTools.MagnifyTool.toolName,
+      csTools.StackScrollTool.toolName,
+      csTools.LengthTool.toolName,
+      csTools.HeightTool.toolName,
+      csTools.ProbeTool.toolName,
+      csTools.AngleTool.toolName,
+      csTools.CobbAngleTool.toolName,
+      csTools.BidirectionalTool.toolName,
+      csTools.RectangleROITool.toolName,
+      csTools.EllipticalROITool.toolName,
+      csTools.CircleROITool.toolName,
+      csTools.ArrowAnnotateTool.toolName,
+      csTools.KeyImageTool.toolName,
+    ];
+
+    toolNames.forEach((toolName) => {
+      toolGroup.setToolPassive(toolName, {
+        removeAllBindings: true,
+      });
+    });
+
+    const activeToolNameMap: Record<ViewerTool, string> = {
+      WL: csTools.WindowLevelTool.toolName,
+      Zoom: csTools.ZoomTool.toolName,
+      Pan: csTools.PanTool.toolName,
+      Rotate: csTools.PlanarRotateTool.toolName,
+      Magnify: csTools.MagnifyTool.toolName,
+      Cine: csTools.StackScrollTool.toolName,
+      Length: csTools.LengthTool.toolName,
+      Height: csTools.HeightTool.toolName,
+      Probe: csTools.ProbeTool.toolName,
+      Angle: csTools.AngleTool.toolName,
+      Cobb: csTools.CobbAngleTool.toolName,
+      Bidirectional: csTools.BidirectionalTool.toolName,
+      RectROI: csTools.RectangleROITool.toolName,
+      EllipseROI: csTools.EllipticalROITool.toolName,
+      CircleROI: csTools.CircleROITool.toolName,
+      Arrow: csTools.ArrowAnnotateTool.toolName,
+      KeyImage: csTools.KeyImageTool.toolName,
+    };
+
+    toolGroup.setToolActive(activeToolNameMap[activeTool], {
+      bindings: [{ mouseButton: csTools.Enums.MouseBindings.Primary }],
+    });
+  }, [activeTool]);
+
+  useEffect(() => {
+    if (!utilityActionRequest) {
+      return;
+    }
+
+    const renderingEngine = renderingEngineRef.current;
+    const viewport = renderingEngine?.getViewport(viewportId) as
+      | (StackViewport & {
+          resetProperties?: () => void;
+          resetToDefaultProperties?: () => void;
+          resetCamera?: (options?: {
+            resetPan?: boolean;
+            resetZoom?: boolean;
+            suppressEvents?: boolean;
+          }) => boolean;
+        })
+      | undefined;
+
+    if (!renderingEngine || !viewport) {
+      return;
+    }
+
+    if (utilityActionRequest.type === "Clear") {
+      const csTools = csToolsRef.current as
+        | (Awaited<typeof import("@cornerstonejs/tools")> & {
+            stateManagement?: {
+              removeAllAnnotations?: () => void;
+            };
+          })
+        | null;
+
+      csTools?.stateManagement?.removeAllAnnotations?.();
+      viewport.render();
+      return;
+    }
+
+    if (utilityActionRequest.type === "Reset") {
+      viewport.resetToDefaultProperties?.();
+      viewport.resetProperties?.();
+      viewport.resetCamera?.({
+        resetPan: true,
+        resetZoom: true,
+        suppressEvents: false,
+      });
+    }
+
+    if (utilityActionRequest.type === "Fit") {
+      viewport.resetCamera?.({
+        resetPan: true,
+        resetZoom: true,
+        suppressEvents: false,
+      });
+    }
+
+    viewport.setDisplayArea(fitDisplayAreaRef.current, true);
+    viewport.render();
+    updateImageFrame();
+  }, [utilityActionRequest]);
 
   useEffect(() => {
     const element = viewportRef.current;
