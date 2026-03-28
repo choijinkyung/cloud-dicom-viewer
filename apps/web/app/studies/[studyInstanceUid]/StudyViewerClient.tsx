@@ -5,6 +5,7 @@ import type { StudyDetail } from "@dicom-viewer/shared";
 import { DicomViewport } from "./DicomViewport";
 
 type ViewerTool =
+  | "None"
   | "WL"
   | "Zoom"
   | "Pan"
@@ -327,6 +328,54 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
 
     setSelectedInstanceId(nextInstance.id);
   };
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const tagName = target?.tagName?.toLowerCase();
+      const isTypingContext =
+        target?.isContentEditable ||
+        tagName === "input" ||
+        tagName === "textarea" ||
+        tagName === "select";
+
+      if (isTypingContext) {
+        return;
+      }
+
+      if (event.key === "Escape") {
+        setActiveTool("None");
+        return;
+      }
+
+      if (selectedInstances.length < 2) {
+        return;
+      }
+
+      if (event.key !== "ArrowDown" && event.key !== "ArrowRight" && event.key !== "ArrowUp" && event.key !== "ArrowLeft") {
+        return;
+      }
+
+      event.preventDefault();
+
+      const step =
+        event.key === "ArrowDown" || event.key === "ArrowRight" ? 1 : -1;
+      const nextIndex = Math.max(
+        0,
+        Math.min(currentImageIndex + step, selectedInstances.length - 1),
+      );
+
+      if (nextIndex !== currentImageIndex) {
+        handleImageIndexChange(nextIndex);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [currentImageIndex, selectedInstances, selectedInstance?.id]);
 
   const panelStyle = {
     border: "1px solid rgba(156, 200, 216, 0.12)",
@@ -851,7 +900,10 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                   fontSize: "12px",
                 }}
               >
-                Active tool: <span style={{ color: "#dff6ff" }}>{activeTool}</span>
+                Active tool:{" "}
+                <span style={{ color: "#dff6ff" }}>
+                  {activeTool === "None" ? "None (Esc)" : activeTool}
+                </span>
               </p>
             </div>
           </div>

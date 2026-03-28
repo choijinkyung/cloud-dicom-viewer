@@ -5,6 +5,7 @@ import * as cornerstone from "@cornerstonejs/core";
 import type { StackViewport } from "@cornerstonejs/core";
 
 type ViewerTool =
+  | "None"
   | "WL"
   | "Zoom"
   | "Pan"
@@ -73,6 +74,13 @@ export function DicomViewport({
     type: "FIT" as const,
     imageArea: [1, 1] as [number, number],
     storeAsInitialCamera: true,
+  });
+  const touchStateRef = useRef<{
+    tracking: boolean;
+    lastY: number;
+  }>({
+    tracking: false,
+    lastY: 0,
   });
 
   const updateImageFrame = () => {
@@ -264,10 +272,74 @@ export function DicomViewport({
       }
     };
 
+    const handleTouchStart = (event: TouchEvent) => {
+      if (stackImageUrls.length < 2 || !onImageIndexChange) {
+        touchStateRef.current.tracking = false;
+        return;
+      }
+
+      const touch = event.touches[0];
+
+      if (!touch) {
+        touchStateRef.current.tracking = false;
+        return;
+      }
+
+      touchStateRef.current = {
+        tracking: isPointInsideImageFrame(touch.clientX, touch.clientY),
+        lastY: touch.clientY,
+      };
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      if (!touchStateRef.current.tracking || !onImageIndexChange) {
+        return;
+      }
+
+      const touch = event.touches[0];
+
+      if (!touch || !isPointInsideImageFrame(touch.clientX, touch.clientY)) {
+        touchStateRef.current.tracking = false;
+        return;
+      }
+
+      const deltaY = touchStateRef.current.lastY - touch.clientY;
+
+      if (Math.abs(deltaY) < 28) {
+        return;
+      }
+
+      event.preventDefault();
+
+      const step = deltaY > 0 ? 1 : -1;
+      const nextIndex = Math.max(
+        0,
+        Math.min(currentImageIndex + step, stackImageUrls.length - 1),
+      );
+
+      if (nextIndex !== currentImageIndex) {
+        onImageIndexChange(nextIndex);
+      }
+
+      touchStateRef.current.lastY = touch.clientY;
+    };
+
+    const endTouchTracking = () => {
+      touchStateRef.current.tracking = false;
+    };
+
     element.addEventListener("wheel", handleWheel, { passive: false });
+    element.addEventListener("touchstart", handleTouchStart, { passive: true });
+    element.addEventListener("touchmove", handleTouchMove, { passive: false });
+    element.addEventListener("touchend", endTouchTracking);
+    element.addEventListener("touchcancel", endTouchTracking);
 
     return () => {
       element.removeEventListener("wheel", handleWheel);
+      element.removeEventListener("touchstart", handleTouchStart);
+      element.removeEventListener("touchmove", handleTouchMove);
+      element.removeEventListener("touchend", endTouchTracking);
+      element.removeEventListener("touchcancel", endTouchTracking);
     };
   }, [currentImageIndex, onImageIndexChange, stackImageUrls.length]);
 
@@ -502,7 +574,7 @@ export function DicomViewport({
       });
     });
 
-    const activeToolNameMap: Record<ViewerTool, string> = {
+    const activeToolNameMap: Partial<Record<ViewerTool, string>> = {
       WL: csTools.WindowLevelTool.toolName,
       Zoom: csTools.ZoomTool.toolName,
       Pan: csTools.PanTool.toolName,
@@ -522,7 +594,13 @@ export function DicomViewport({
       KeyImage: csTools.KeyImageTool.toolName,
     };
 
-    toolGroup.setToolActive(activeToolNameMap[activeTool], {
+    const toolName = activeToolNameMap[activeTool];
+
+    if (!toolName) {
+      return;
+    }
+
+    toolGroup.setToolActive(toolName, {
       bindings: [{ mouseButton: csTools.Enums.MouseBindings.Primary }],
     });
   }, [activeTool]);
@@ -640,8 +718,12 @@ export function DicomViewport({
           "radial-gradient(circle at center, rgba(88, 196, 220, 0.18), transparent 32%), rgba(5, 10, 18, 0.96)",
         position: "relative",
         overflow: "hidden",
-        cursor: stackImageUrls.length > 1 ? "ns-resize" : "default",
+        cursor:
+          stackImageUrls.length > 1 && activeTool === "Cine"
+            ? "ns-resize"
+            : "default",
         boxShadow: "0 28px 80px rgba(2, 6, 16, 0.42)",
+        touchAction: "pan-x pan-y",
       }}
     >
       <div
