@@ -171,7 +171,7 @@ export const demoStudyDetails: Record<string, StudyDetail> = {
         id: "demo-series-mr-1",
         seriesInstanceUid: "demo-series-mr-1",
         modality: "MR",
-        description: "Ax T2 FLAIR",
+        description: "Bundled Sample Series 3",
         seriesNumber: 3,
         instanceCount: 24,
         instances: Array.from({ length: 24 }, (_, index) => ({
@@ -179,13 +179,16 @@ export const demoStudyDetails: Record<string, StudyDetail> = {
           sopInstanceUid: `demo-mr-1-${index + 1}`,
           instanceNumber: index + 1,
           sopClassUid: null,
+          imageUrl: `/TESTDCM/daae3df7f522b56724aed7e3e544c0fe/series-000003/image-${String(
+            index + 1,
+          ).padStart(6, "0")}.dcm`,
         })),
       },
       {
         id: "demo-series-mr-2",
         seriesInstanceUid: "demo-series-mr-2",
         modality: "MR",
-        description: "Sag T1",
+        description: "Bundled Sample Series 4",
         seriesNumber: 5,
         instanceCount: 16,
         instances: Array.from({ length: 16 }, (_, index) => ({
@@ -193,6 +196,9 @@ export const demoStudyDetails: Record<string, StudyDetail> = {
           sopInstanceUid: `demo-mr-2-${index + 1}`,
           instanceNumber: index + 1,
           sopClassUid: null,
+          imageUrl: `/TESTDCM/daae3df7f522b56724aed7e3e544c0fe/series-000004/image-${String(
+            index + 1,
+          ).padStart(6, "0")}.dcm`,
         })),
       },
     ],
@@ -225,17 +231,18 @@ export const demoStudyDetails: Record<string, StudyDetail> = {
         id: "demo-series-xr-1",
         seriesInstanceUid: "demo-series-xr-1",
         modality: "XR",
-        description: "Portable AP",
+        description: "Bundled Sample Series 5",
         seriesNumber: 1,
-        instanceCount: 1,
-        instances: [
-          {
-            id: "demo-xr-1-1",
-            sopInstanceUid: "demo-xr-1-1",
-            instanceNumber: 1,
-            sopClassUid: null,
-          },
-        ],
+        instanceCount: 18,
+        instances: Array.from({ length: 18 }, (_, index) => ({
+          id: `demo-xr-1-${index + 1}`,
+          sopInstanceUid: `demo-xr-1-${index + 1}`,
+          instanceNumber: index + 1,
+          sopClassUid: null,
+          imageUrl: `/TESTDCM/daae3df7f522b56724aed7e3e544c0fe/series-000005/image-${String(
+            index + 1,
+          ).padStart(6, "0")}.dcm`,
+        })),
       },
     ],
   },
