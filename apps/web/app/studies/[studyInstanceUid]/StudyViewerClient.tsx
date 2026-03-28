@@ -26,6 +26,7 @@ type ViewerTool =
 
 type ViewerUtilityAction = "Reset" | "Fit" | "Clear";
 type ToolGroupKey = "Navigate" | "Measure" | "Annotate" | "Utility";
+type ViewerOverlayPanel = "metadata" | "reports" | null;
 
 type ToolbarItem =
   | { kind: "tool"; key: ViewerTool; label: string }
@@ -330,6 +331,8 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
   const [openToolGroup, setOpenToolGroup] = useState<ToolGroupKey | null>(
     "Navigate",
   );
+  const [openOverlayPanel, setOpenOverlayPanel] =
+    useState<ViewerOverlayPanel>(null);
   const [hoveredToolbarItem, setHoveredToolbarItem] = useState<string | null>(
     null,
   );
@@ -383,6 +386,11 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
       }
 
       if (event.key === "Escape") {
+        if (openOverlayPanel) {
+          setOpenOverlayPanel(null);
+          return;
+        }
+
         setActiveToolGroup("Navigate");
         setOpenToolGroup(null);
         setActiveTool(null);
@@ -416,7 +424,7 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [currentImageIndex, selectedInstances, selectedInstance?.id]);
+  }, [currentImageIndex, openOverlayPanel, selectedInstances, selectedInstance?.id]);
 
   const panelStyle = {
     border: "1px solid rgba(156, 200, 216, 0.12)",
@@ -898,12 +906,48 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                     padding: "0 4px 0 8px",
                     display: "flex",
                     alignItems: "center",
+                    gap: "8px",
                     color: "#8ea3b7",
                     fontSize: "12px",
                     whiteSpace: "nowrap",
                     flexShrink: 0,
                   }}
                 >
+                  {(
+                    [
+                      { key: "metadata", label: "Study" },
+                      { key: "reports", label: "Report" },
+                    ] as const
+                  ).map((panel) => {
+                    const isOpen = openOverlayPanel === panel.key;
+
+                    return (
+                      <button
+                        key={panel.key}
+                        type="button"
+                        onClick={() =>
+                          setOpenOverlayPanel((current) =>
+                            current === panel.key ? null : panel.key,
+                          )
+                        }
+                        style={{
+                          borderRadius: "999px",
+                          border: isOpen
+                            ? "1px solid rgba(143, 223, 243, 0.42)"
+                            : "1px solid rgba(88, 196, 220, 0.16)",
+                          background: isOpen
+                            ? "linear-gradient(180deg, rgba(88, 196, 220, 0.18), rgba(42, 108, 122, 0.28))"
+                            : "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
+                          color: "#dff6ff",
+                          fontSize: "11px",
+                          padding: "6px 10px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {panel.label}
+                      </button>
+                    );
+                  })}
                   Active:{" "}
                   <span style={{ color: "#dff6ff", marginLeft: "6px" }}>
                     {activeTool ? TOOL_LABELS[activeTool] : "Idle"}
@@ -1081,6 +1125,173 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                           </div>
                         );
                       },
+                    )}
+                  </div>
+                </div>
+              ) : null}
+
+              {openOverlayPanel ? (
+                <div
+                  onClick={() => setOpenOverlayPanel(null)}
+                  style={{
+                    position: "fixed",
+                    inset: 0,
+                    zIndex: 40,
+                    background: "rgba(2, 6, 16, 0.46)",
+                    display: "grid",
+                    placeItems: "center",
+                    padding: "24px",
+                  }}
+                >
+                  <div
+                    onClick={(event) => event.stopPropagation()}
+                    style={{
+                      width: "min(720px, calc(100vw - 32px))",
+                      maxHeight: "min(72dvh, 760px)",
+                      overflow: "auto",
+                      borderRadius: "22px",
+                      border: "1px solid rgba(88, 196, 220, 0.18)",
+                      background:
+                        "linear-gradient(180deg, rgba(14, 27, 43, 0.98), rgba(9, 19, 31, 0.99))",
+                      boxShadow: "0 32px 80px rgba(2, 6, 16, 0.52)",
+                      padding: "18px",
+                      display: "grid",
+                      gap: "14px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: "12px",
+                      }}
+                    >
+                      <div>
+                        <p
+                          style={{
+                            margin: 0,
+                            color: "#8fdff3",
+                            fontSize: "11px",
+                            letterSpacing: "0.1em",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          Viewer Panel
+                        </p>
+                        <h3
+                          style={{
+                            margin: "6px 0 0",
+                            color: "#f3f7fb",
+                            fontSize: "22px",
+                          }}
+                        >
+                          {openOverlayPanel === "metadata"
+                            ? "Study Metadata"
+                            : "Reports"}
+                        </h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setOpenOverlayPanel(null)}
+                        style={{
+                          width: "34px",
+                          height: "34px",
+                          borderRadius: "999px",
+                          border: "1px solid rgba(88, 196, 220, 0.16)",
+                          background:
+                            "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
+                          color: "#dff6ff",
+                          cursor: "pointer",
+                          fontSize: "16px",
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+
+                    {openOverlayPanel === "metadata" ? (
+                      <div
+                        style={{
+                          display: "grid",
+                          gap: "10px",
+                        }}
+                      >
+                        {[
+                          `Study Date: ${study.studyDate ?? "N/A"}`,
+                          `Received At: ${study.receivedAt}`,
+                          `Series Count: ${study.series.length}`,
+                          `Selected Series UID: ${selectedSeries?.seriesInstanceUid ?? "N/A"}`,
+                          `Accession Number: ${study.accessionNumber ?? "UNKNOWN"}`,
+                          `Status: ${study.status}`,
+                        ].map((value) => (
+                          <div
+                            key={value}
+                            style={{
+                              padding: "12px 14px",
+                              borderRadius: "16px",
+                              background:
+                                "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
+                              border: "1px solid rgba(88, 196, 220, 0.14)",
+                              color: "#d7ecf6",
+                              fontSize: "14px",
+                              lineHeight: 1.45,
+                            }}
+                          >
+                            {value}
+                          </div>
+                        ))}
+                      </div>
+                    ) : study.reports.length > 0 ? (
+                      <div style={{ display: "grid", gap: "12px" }}>
+                        {study.reports.map((report) => (
+                          <div
+                            key={report.id}
+                            style={{
+                              padding: "14px",
+                              borderRadius: "18px",
+                              background:
+                                "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
+                              border: "1px solid rgba(88, 196, 220, 0.14)",
+                            }}
+                          >
+                            <p
+                              style={{
+                                margin: "0 0 10px",
+                                color: "#d7ecf6",
+                                fontSize: "14px",
+                              }}
+                            >
+                              Status: {report.status}
+                            </p>
+                            <pre
+                              style={{
+                                whiteSpace: "pre-wrap",
+                                color: "#8fbccc",
+                                margin: 0,
+                                overflow: "auto",
+                                fontSize: "12px",
+                                lineHeight: 1.5,
+                              }}
+                            >
+                              {JSON.stringify(report.content, null, 2)}
+                            </pre>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          padding: "16px",
+                          borderRadius: "16px",
+                          background:
+                            "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
+                          border: "1px solid rgba(88, 196, 220, 0.14)",
+                          color: "#d7ecf6",
+                        }}
+                      >
+                        No reports yet
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1265,104 +1476,6 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                 </div>
               ) : null}
             </section>
-
-            <div
-              style={{
-                display: "grid",
-                gap: "12px",
-                minWidth: 0,
-              }}
-            >
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: isCompactLayout
-                    ? "minmax(0, 1fr)"
-                    : "minmax(0, 0.9fr) minmax(0, 1.1fr)",
-                  gap: "12px",
-                  minWidth: 0,
-                }}
-              >
-                <div
-                  style={{
-                    ...panelStyle,
-                    padding: "14px",
-                  }}
-                >
-                  <h2
-                    style={{
-                      marginTop: 0,
-                      marginBottom: "10px",
-                      fontSize: "16px",
-                      color: "#f3f7fb",
-                    }}
-                  >
-                    Study Metadata
-                  </h2>
-                  {[
-                    `Study Date: ${study.studyDate ?? "N/A"}`,
-                    `Received At: ${study.receivedAt}`,
-                    `Series Count: ${study.series.length}`,
-                    `Selected Series UID: ${selectedSeries?.seriesInstanceUid ?? "N/A"}`,
-                  ].map((value) => (
-                    <p
-                      key={value}
-                      style={{
-                        color: "#d7ecf6",
-                        margin: "0 0 8px",
-                        fontSize: "13px",
-                        lineHeight: 1.45,
-                      }}
-                    >
-                      {value}
-                    </p>
-                  ))}
-                </div>
-
-                <div
-                  style={{
-                    ...panelStyle,
-                    padding: "14px",
-                    minWidth: 0,
-                  }}
-                >
-                  <h2
-                    style={{
-                      marginTop: 0,
-                      marginBottom: "10px",
-                      fontSize: "16px",
-                      color: "#f3f7fb",
-                    }}
-                  >
-                    Reports
-                  </h2>
-                  {study.reports.length > 0 ? (
-                    study.reports.map((report) => (
-                      <div key={report.id} style={{ color: "#d7ecf6" }}>
-                        <p style={{ margin: "0 0 8px", fontSize: "13px" }}>
-                          Status: {report.status}
-                        </p>
-                        <pre
-                          style={{
-                            whiteSpace: "pre-wrap",
-                            color: "#8fbccc",
-                            margin: 0,
-                            maxHeight: "168px",
-                            overflow: "auto",
-                            fontSize: "12px",
-                            lineHeight: 1.45,
-                          }}
-                        >
-                          {JSON.stringify(report.content, null, 2)}
-                        </pre>
-                      </div>
-                    ))
-                  ) : (
-                    <p style={{ color: "#d7ecf6" }}>No reports yet</p>
-                  )}
-                </div>
-              </div>
-            </div>
           </div>
         </section>
       </div>
