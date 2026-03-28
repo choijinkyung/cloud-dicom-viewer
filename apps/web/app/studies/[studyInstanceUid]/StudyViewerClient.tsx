@@ -298,14 +298,14 @@ const GROUP_DESCRIPTIONS: Record<ToolGroupKey, string> = {
 
 function getToolbarGridColumns(itemCount: number) {
   if (itemCount <= 4) {
-    return "repeat(2, minmax(56px, 64px))";
+    return "repeat(2, 64px)";
   }
 
   if (itemCount <= 9) {
-    return "repeat(3, minmax(56px, 64px))";
+    return "repeat(3, 64px)";
   }
 
-  return "repeat(4, minmax(56px, 64px))";
+  return "repeat(4, 64px)";
 }
 
 interface StudyViewerClientProps {
@@ -428,7 +428,7 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
   } as const;
   const viewerShellMinHeight = isCompactLayout
     ? "auto"
-    : "calc(100dvh - 176px)";
+    : "calc(100dvh - 148px)";
 
   useEffect(() => {
     const syncLayout = () => {
@@ -450,7 +450,7 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
         maxWidth: "100%",
         margin: "0 auto",
         padding:
-          "clamp(8px, 1.2vw, 16px) clamp(8px, 1.2vw, 16px) clamp(16px, 2vw, 24px)",
+          "clamp(6px, 1vw, 12px) clamp(6px, 1vw, 12px) clamp(12px, 1.6vw, 18px)",
         display: "flex",
         flexDirection: "column",
         boxSizing: "border-box",
@@ -460,8 +460,8 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
       <section
         style={{
           ...panelStyle,
-          marginBottom: "16px",
-          padding: "clamp(12px, 1.8vw, 16px)",
+          marginBottom: "12px",
+          padding: "clamp(10px, 1.4vw, 14px)",
           background:
             "linear-gradient(180deg, rgba(10, 21, 36, 0.82), rgba(9, 19, 31, 0.88))",
         }}
@@ -616,7 +616,7 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
           gridTemplateColumns: isCompactLayout
             ? "minmax(0, 1fr)"
             : "clamp(236px, 18vw, 288px) minmax(0, 1fr)",
-          gap: "16px",
+          gap: "12px",
           alignItems: "start",
           flex: 1,
           minHeight: viewerShellMinHeight,
@@ -626,7 +626,7 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
         <aside
           style={{
             ...panelStyle,
-            padding: "18px",
+            padding: "14px",
             display: "flex",
             flexDirection: "column",
             minWidth: 0,
@@ -634,16 +634,16 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
             maxHeight: isCompactLayout ? "none" : viewerShellMinHeight,
             overflow: isCompactLayout ? "visible" : "auto",
             position: isCompactLayout ? "relative" : "sticky",
-            top: isCompactLayout ? "auto" : "16px",
+            top: isCompactLayout ? "auto" : "12px",
             alignSelf: isCompactLayout ? "stretch" : "flex-start",
           }}
         >
           <h2
             style={{
               marginTop: 0,
-              marginBottom: "14px",
+              marginBottom: "10px",
               color: "#f3f7fb",
-              fontSize: "28px",
+              fontSize: "24px",
             }}
           >
             Series
@@ -651,7 +651,7 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
           <div
             style={{
               display: isCompactLayout ? "flex" : "grid",
-              gap: "12px",
+              gap: "10px",
               overflowX: isCompactLayout ? "auto" : "visible",
               gridTemplateColumns: isCompactLayout ? undefined : "1fr",
               paddingBottom: isCompactLayout ? "6px" : 0,
@@ -666,8 +666,8 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                     key={series.id}
                     style={{
                       flex: isCompactLayout ? "0 0 220px" : undefined,
-                      padding: "12px",
-                      borderRadius: "16px",
+                      padding: "10px",
+                      borderRadius: "14px",
                       background: isSelectedSeries
                         ? "linear-gradient(180deg, rgba(88, 196, 220, 0.18), rgba(66, 176, 230, 0.12))"
                         : "linear-gradient(180deg, rgba(18, 34, 54, 0.96), rgba(12, 24, 40, 0.98))",
@@ -694,16 +694,16 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                     >
                       <div
                         style={{
-                          height: "84px",
-                          borderRadius: "14px",
-                          marginBottom: "12px",
+                          height: "72px",
+                          borderRadius: "12px",
+                          marginBottom: "10px",
                           border: "1px solid rgba(126, 224, 161, 0.14)",
                           background:
                             "radial-gradient(circle at center, rgba(88, 196, 220, 0.22), transparent 56%), linear-gradient(180deg, rgba(5, 10, 18, 0.96), rgba(9, 19, 31, 0.98))",
                           display: "grid",
                           placeItems: "center",
                           color: "#8fdff3",
-                          fontSize: "12px",
+                          fontSize: "11px",
                           letterSpacing: "0.08em",
                           textTransform: "uppercase",
                         }}
@@ -716,14 +716,14 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                           {series.modality ?? "N/A"}
                         </span>
                       </strong>
-                      <p style={{ margin: "8px 0 0", color: "#d7e3ea" }}>
+                      <p style={{ margin: "6px 0 0", color: "#d7e3ea", fontSize: "14px" }}>
                         {series.description ?? "Untitled Series"}
                       </p>
                       <p
                         style={{
                           margin: "6px 0 0",
                           color: "#7fb8ca",
-                          fontSize: "14px",
+                          fontSize: "13px",
                         }}
                       >
                         {series.instanceCount} instances
@@ -752,7 +752,7 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
         <section
           style={{
             display: "grid",
-            gap: "16px",
+            gap: "12px",
             minWidth: 0,
             minHeight: viewerShellMinHeight,
             alignContent: "start",
@@ -763,7 +763,7 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
           <div
             style={{
               ...panelStyle,
-              padding: "10px 14px 14px",
+              padding: "8px 12px 10px",
               width: "100%",
               position: "relative",
               zIndex: 8,
@@ -819,29 +819,29 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                       style={{
                         background:
                           isActiveGroup || isOpen
-                            ? "linear-gradient(180deg, rgba(126, 224, 161, 0.18), rgba(67, 143, 104, 0.24))"
+                            ? "linear-gradient(180deg, rgba(88, 196, 220, 0.2), rgba(42, 108, 122, 0.28))"
                             : "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
                         color:
                           isActiveGroup || isOpen ? "#f3fffb" : "#a7cad8",
                         border:
                           isActiveGroup || isOpen
-                            ? "1px solid rgba(126, 224, 161, 0.38)"
+                            ? "1px solid rgba(143, 223, 243, 0.42)"
                             : "1px solid rgba(88, 196, 220, 0.16)",
-                        width: "72px",
-                        minWidth: "72px",
-                        height: "72px",
-                        borderRadius: "12px",
+                        width: "58px",
+                        minWidth: "58px",
+                        height: "58px",
+                        borderRadius: "10px",
                         cursor: "pointer",
-                        fontSize: "11px",
+                        fontSize: "10px",
                         display: "grid",
                         justifyItems: "center",
                         alignContent: "center",
-                        gap: "6px",
+                        gap: "4px",
                         flexShrink: 0,
                         position: "relative",
                         boxShadow:
                           isActiveGroup || isOpen
-                            ? "0 12px 24px rgba(126, 224, 161, 0.12)"
+                            ? "0 10px 22px rgba(88, 196, 220, 0.16)"
                             : "none",
                       }}
                     >
@@ -853,30 +853,41 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                       >
                         <ToolGroupIcon group={group.key} />
                       </span>
-                      <span
+                        <span
                         style={{
-                          maxWidth: "52px",
+                          maxWidth: "42px",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap",
                           lineHeight: 1,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "3px",
                         }}
                       >
-                        {group.label}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: "10px",
-                          transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-                          transition: "transform 160ms ease",
-                          color: "#ff4d78",
-                          position: "absolute",
-                          right: "8px",
-                          bottom: "8px",
-                        }}
-                      >
-                        ▼
-                      </span>
+                          <span
+                            style={{
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {group.label}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: "9px",
+                              transform: isOpen
+                                ? "rotate(180deg)"
+                                : "rotate(0deg)",
+                              transition: "transform 160ms ease",
+                              color: "#8fdff3",
+                              flexShrink: 0,
+                            }}
+                          >
+                            ▼
+                          </span>
+                        </span>
                     </button>
                   );
                 })}
@@ -904,18 +915,19 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                 <div
                   style={{
                     position: "absolute",
-                    top: "calc(100% + 6px)",
+                    top: "calc(100% + 4px)",
                     left: 0,
                     zIndex: 30,
-                    borderRadius: "18px",
+                    borderRadius: "14px",
                     border: "1px solid rgba(88, 196, 220, 0.16)",
                     background:
                       "linear-gradient(180deg, rgba(15, 21, 33, 0.98), rgba(10, 18, 30, 0.98))",
-                    padding: "12px 12px 10px",
+                    padding: "10px",
                     display: "grid",
-                    gap: "12px",
+                    gap: "10px",
                     boxShadow: "0 24px 60px rgba(0, 0, 0, 0.42)",
-                    width: "min(420px, calc(100vw - 48px))",
+                    width: "fit-content",
+                    maxWidth: "min(320px, calc(100vw - 40px))",
                   }}
                 >
                   <div
@@ -930,9 +942,9 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                       style={{
                         display: "inline-flex",
                         alignItems: "center",
-                        gap: "8px",
+                        gap: "6px",
                         color: "#cdebf5",
-                        fontSize: "12px",
+                        fontSize: "11px",
                         letterSpacing: "0.08em",
                         textTransform: "uppercase",
                       }}
@@ -940,7 +952,7 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                       <ToolGroupIcon group={openToolGroup} />
                       {openToolGroup}
                     </div>
-                    <div style={{ color: "#6f8594", fontSize: "11px" }}>
+                    <div style={{ color: "#6f8594", fontSize: "10px" }}>
                       {GROUP_DESCRIPTIONS[openToolGroup]}
                     </div>
                   </div>
@@ -948,7 +960,7 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                   <div
                     style={{
                       display: "grid",
-                      gap: "8px",
+                      gap: "6px",
                       gridTemplateColumns: getToolbarGridColumns(
                         TOOL_GROUPS.find((group) => group.key === openToolGroup)
                           ?.items.length ?? 0,

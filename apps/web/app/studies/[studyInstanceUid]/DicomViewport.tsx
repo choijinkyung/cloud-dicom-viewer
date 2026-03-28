@@ -712,11 +712,11 @@ export function DicomViewport({
         width: "100%",
         maxWidth: "100%",
         aspectRatio: "16 / 10",
-        minHeight: "clamp(320px, 40dvh, 520px)",
+        minHeight: "clamp(260px, 32dvh, 420px)",
         height: "auto",
-        maxHeight: "calc(100dvh - 280px)",
+        maxHeight: "calc(100dvh - 340px)",
         margin: 0,
-        borderRadius: "24px",
+        borderRadius: "20px",
         border: "1px solid rgba(143, 223, 243, 0.18)",
         background:
           "radial-gradient(circle at center, rgba(88, 196, 220, 0.18), transparent 32%), rgba(5, 10, 18, 0.96)",
@@ -733,19 +733,19 @@ export function DicomViewport({
       <div
         style={{
           position: "absolute",
-          inset: "14px",
-          borderRadius: "16px",
+          inset: "12px",
+          borderRadius: "14px",
           border: "1px dashed rgba(126, 224, 161, 0.18)",
         }}
       />
       <div
         style={{
           position: "absolute",
-          top: "22px",
-          left: "22px",
+          top: "18px",
+          left: "18px",
           zIndex: 3,
-          padding: "10px 12px",
-          borderRadius: "14px",
+          padding: "8px 10px",
+          borderRadius: "12px",
           background: "rgba(4, 10, 18, 0.62)",
           border: "1px solid rgba(88, 196, 220, 0.14)",
           color: "#d9dfeb",
@@ -756,7 +756,7 @@ export function DicomViewport({
           style={{
             margin: 0,
             color: "#8fdff3",
-            fontSize: "11px",
+            fontSize: "10px",
             letterSpacing: "0.08em",
             textTransform: "uppercase",
           }}
@@ -766,7 +766,7 @@ export function DicomViewport({
         <p style={{ margin: "6px 0 0", fontSize: "15px", color: "#f3f7fb" }}>
           {seriesDescription ?? "N/A"}
         </p>
-        <p style={{ margin: "6px 0 0", color: "#98a2b3", fontSize: "12px" }}>
+        <p style={{ margin: "5px 0 0", color: "#98a2b3", fontSize: "11px" }}>
           {isDemoMode
             ? "Hosted UI Demo"
             : `Slice ${currentImageIndex + 1} / ${stackImageUrls.length}`}
@@ -817,15 +817,15 @@ export function DicomViewport({
       <div
         style={{
           position: "absolute",
-          right: "22px",
-          bottom: "22px",
+          right: "18px",
+          bottom: "18px",
           zIndex: 3,
-          padding: "9px 11px",
+          padding: "7px 10px",
           borderRadius: "999px",
           background: "rgba(4, 10, 18, 0.62)",
           border: "1px solid rgba(126, 224, 161, 0.16)",
           color: "#d9dfeb",
-          fontSize: "11px",
+          fontSize: "10px",
           pointerEvents: "none",
         }}
       >
