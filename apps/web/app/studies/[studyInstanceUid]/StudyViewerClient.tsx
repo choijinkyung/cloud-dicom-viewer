@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import * as cornerstone from "@cornerstonejs/core";
+import type { StackViewport } from "@cornerstonejs/core";
 import type { StudyDetail } from "@dicom-viewer/shared";
 import { DicomViewport } from "./DicomViewport";
 
@@ -309,13 +311,106 @@ function getToolbarGridColumns(itemCount: number) {
   return "repeat(4, 64px)";
 }
 
+function SeriesThumbnail({
+  seriesId,
+  imageUrl,
+  compact = false,
+}: {
+  seriesId: string;
+  imageUrl?: string | null;
+  compact?: boolean;
+}) {
+  const elementRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const element = elementRef.current;
+
+    if (!element || !imageUrl) {
+      return;
+    }
+
+    let cancelled = false;
+    let renderingEngine: cornerstone.RenderingEngine | null = null;
+
+    const run = async () => {
+      await cornerstone.init();
+
+      const cornerstoneDICOMImageLoader = await import(
+        "@cornerstonejs/dicom-image-loader"
+      );
+
+      cornerstoneDICOMImageLoader.init({
+        maxWebWorkers: 1,
+      });
+
+      if (cancelled) {
+        return;
+      }
+
+      const renderingEngineId = `series-thumb-engine-${seriesId}`;
+      const viewportId = `series-thumb-viewport-${seriesId}`;
+
+      renderingEngine = new cornerstone.RenderingEngine(renderingEngineId);
+
+      renderingEngine.setViewports([
+        {
+          viewportId,
+          type: cornerstone.Enums.ViewportType.STACK,
+          element,
+          defaultOptions: {
+            background: [0.01, 0.03, 0.06],
+          },
+        },
+      ]);
+
+      const viewport = renderingEngine.getViewport(viewportId) as StackViewport;
+      await viewport.setStack([`wadouri:${imageUrl}`], 0);
+      viewport.setDisplayArea(
+        {
+          type: "FIT",
+          imageArea: [1, 1],
+          storeAsInitialCamera: true,
+        },
+        true,
+      );
+      viewport.render();
+    };
+
+    run().catch(() => {
+      // Keep the placeholder styling if a thumbnail can't be rendered.
+    });
+
+    return () => {
+      cancelled = true;
+
+      if (renderingEngine) {
+        renderingEngine.destroy();
+      }
+    };
+  }, [imageUrl, seriesId]);
+
+  return (
+    <div
+      ref={elementRef}
+      style={{
+        height: compact ? "56px" : "64px",
+        borderRadius: "10px",
+        marginBottom: "8px",
+        border: "1px solid rgba(126, 224, 161, 0.14)",
+        background:
+          "radial-gradient(circle at center, rgba(88, 196, 220, 0.14), transparent 58%), linear-gradient(180deg, rgba(5, 10, 18, 0.96), rgba(9, 19, 31, 0.98))",
+        overflow: "hidden",
+      }}
+    />
+  );
+}
+
 interface StudyViewerClientProps {
   study: StudyDetail;
 }
 
 export function StudyViewerClient({ study }: StudyViewerClientProps) {
   const [isCompactLayout, setIsCompactLayout] = useState(false);
-  const [isFilmstripCollapsed, setIsFilmstripCollapsed] = useState(false);
   const initialSeries = study.series[0] ?? null;
   const initialInstance = initialSeries?.instances[0] ?? null;
 
@@ -328,9 +423,7 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
 
   const [activeTool, setActiveTool] = useState<ViewerTool | null>("WL");
   const [activeToolGroup, setActiveToolGroup] = useState<ToolGroupKey>("Navigate");
-  const [openToolGroup, setOpenToolGroup] = useState<ToolGroupKey | null>(
-    "Navigate",
-  );
+  const [openToolGroup, setOpenToolGroup] = useState<ToolGroupKey | null>(null);
   const [openOverlayPanel, setOpenOverlayPanel] =
     useState<ViewerOverlayPanel>(null);
   const [hoveredToolbarItem, setHoveredToolbarItem] = useState<string | null>(
@@ -436,7 +529,7 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
   } as const;
   const viewerShellMinHeight = isCompactLayout
     ? "auto"
-    : "calc(100dvh - 148px)";
+    : "calc(100dvh - 88px)";
 
   useEffect(() => {
     const syncLayout = () => {
@@ -465,13 +558,431 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
         overflowX: "clip",
       }}
     >
+      <section
+        style={{
+          ...panelStyle,
+          padding: "8px 12px 10px",
+          width: "100%",
+          position: "relative",
+          zIndex: 8,
+          overflow: "visible",
+          marginBottom: "12px",
+        }}
+      >
+        <div
+          style={{
+            display: "grid",
+            gap: "10px",
+            position: "relative",
+            overflow: "visible",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              gap: "8px",
+              flexWrap: "wrap",
+              alignItems: "center",
+              overflowX: "visible",
+              paddingBottom: "2px",
+            }}
+          >
+            <Link
+              href="/worklist"
+              style={{
+                width: "58px",
+                minWidth: "58px",
+                height: "58px",
+                borderRadius: "12px",
+                display: "grid",
+                placeItems: "center",
+                textDecoration: "none",
+                background:
+                  "linear-gradient(135deg, rgba(126, 224, 161, 0.96) 0%, rgba(88, 196, 220, 0.96) 100%)",
+                color: "#06111d",
+                boxShadow: "0 10px 24px rgba(88, 196, 220, 0.2)",
+                flexShrink: 0,
+              }}
+              aria-label="Back to Worklist"
+              title="Back to Worklist"
+            >
+              <span
+                style={{
+                  fontWeight: 800,
+                  fontSize: "18px",
+                  letterSpacing: "-0.04em",
+                }}
+              >
+                DV
+              </span>
+            </Link>
+
+            {TOOL_GROUPS.map((group) => {
+              const isActiveGroup = activeToolGroup === group.key;
+              const isOpen = openToolGroup === group.key;
+
+              return (
+                <button
+                  key={group.key}
+                  type="button"
+                  onClick={() => {
+                    setActiveToolGroup(group.key);
+                    setOpenToolGroup((currentGroup) =>
+                      currentGroup === group.key ? null : group.key,
+                    );
+
+                    const firstTool = group.items.find(
+                      (item) => item.kind === "tool",
+                    );
+
+                    if (
+                      firstTool &&
+                      !group.items.some(
+                        (item) =>
+                          item.kind === "tool" && item.key === activeTool,
+                      )
+                    ) {
+                      setActiveTool(firstTool.key);
+                    }
+                  }}
+                  style={{
+                    background:
+                      isActiveGroup || isOpen
+                        ? "linear-gradient(180deg, rgba(88, 196, 220, 0.2), rgba(42, 108, 122, 0.28))"
+                        : "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
+                    color: isActiveGroup || isOpen ? "#f3fffb" : "#a7cad8",
+                    border:
+                      isActiveGroup || isOpen
+                        ? "1px solid rgba(143, 223, 243, 0.42)"
+                        : "1px solid rgba(88, 196, 220, 0.16)",
+                    width: "58px",
+                    minWidth: "58px",
+                    height: "58px",
+                    borderRadius: "10px",
+                    cursor: "pointer",
+                    fontSize: "10px",
+                    display: "grid",
+                    justifyItems: "center",
+                    alignContent: "center",
+                    gap: "4px",
+                    flexShrink: 0,
+                    position: "relative",
+                    boxShadow:
+                      isActiveGroup || isOpen
+                        ? "0 10px 22px rgba(88, 196, 220, 0.16)"
+                        : "none",
+                  }}
+                >
+                  <span
+                    style={{
+                      color: isActiveGroup || isOpen ? "#f3fffb" : "#dff6ff",
+                    }}
+                  >
+                    <ToolGroupIcon group={group.key} />
+                  </span>
+                  <span
+                    style={{
+                      maxWidth: "42px",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      lineHeight: 1,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "3px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {group.label}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "9px",
+                        transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+                        transition: "transform 160ms ease",
+                        color: "#8fdff3",
+                        flexShrink: 0,
+                      }}
+                    >
+                      ▼
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+
+            <div
+              style={{
+                marginLeft: "auto",
+                padding: "0 4px 0 8px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                color: "#8ea3b7",
+                fontSize: "12px",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+              }}
+            >
+              {(
+                [
+                  { key: "metadata", label: "Study" },
+                  { key: "reports", label: "Report" },
+                ] as const
+              ).map((panel) => {
+                const isOpen = openOverlayPanel === panel.key;
+
+                return (
+                  <button
+                    key={panel.key}
+                    type="button"
+                    onClick={() =>
+                      setOpenOverlayPanel((current) =>
+                        current === panel.key ? null : panel.key,
+                      )
+                    }
+                    style={{
+                      width: "58px",
+                      minWidth: "58px",
+                      height: "58px",
+                      borderRadius: "10px",
+                      border: isOpen
+                        ? "1px solid rgba(143, 223, 243, 0.42)"
+                        : "1px solid rgba(88, 196, 220, 0.16)",
+                      background: isOpen
+                        ? "linear-gradient(180deg, rgba(88, 196, 220, 0.18), rgba(42, 108, 122, 0.28))"
+                        : "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
+                      color: "#dff6ff",
+                      fontSize: "10px",
+                      cursor: "pointer",
+                      display: "grid",
+                      justifyItems: "center",
+                      alignContent: "center",
+                      gap: "4px",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "14px",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {panel.key === "metadata" ? "◫" : "☰"}
+                    </span>
+                    <span
+                      style={{
+                        maxWidth: "42px",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {panel.label}
+                    </span>
+                  </button>
+                );
+              })}
+              <span>
+                Active:{" "}
+                <span style={{ color: "#dff6ff", marginLeft: "6px" }}>
+                  {activeTool ? TOOL_LABELS[activeTool] : "Idle"}
+                </span>
+              </span>
+            </div>
+          </div>
+
+          {openToolGroup ? (
+            <div
+              style={{
+                position: "absolute",
+                top: "calc(100% + 4px)",
+                left: 0,
+                zIndex: 30,
+                borderRadius: "14px",
+                border: "1px solid rgba(88, 196, 220, 0.16)",
+                background:
+                  "linear-gradient(180deg, rgba(15, 21, 33, 0.98), rgba(10, 18, 30, 0.98))",
+                padding: "10px",
+                display: "grid",
+                gap: "10px",
+                boxShadow: "0 24px 60px rgba(0, 0, 0, 0.42)",
+                width: "fit-content",
+                maxWidth: "min(320px, calc(100vw - 40px))",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "12px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    color: "#cdebf5",
+                    fontSize: "11px",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  <ToolGroupIcon group={openToolGroup} />
+                  {openToolGroup}
+                </div>
+                <div style={{ color: "#6f8594", fontSize: "10px" }}>
+                  {GROUP_DESCRIPTIONS[openToolGroup]}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gap: "6px",
+                  gridTemplateColumns: getToolbarGridColumns(
+                    TOOL_GROUPS.find((group) => group.key === openToolGroup)
+                      ?.items.length ?? 0,
+                  ),
+                }}
+              >
+                {TOOL_GROUPS.find((group) => group.key === openToolGroup)?.items.map(
+                  (item) => {
+                    const isTool = item.kind === "tool";
+                    const isActive = isTool && activeTool === item.key;
+                    const itemId = `${openToolGroup}-${item.key}`;
+
+                    return (
+                      <div
+                        key={item.key}
+                        style={{
+                          position: "relative",
+                          display: "grid",
+                        }}
+                        onMouseEnter={() => setHoveredToolbarItem(itemId)}
+                        onMouseLeave={() => setHoveredToolbarItem(null)}
+                      >
+                        <button
+                          type="button"
+                          aria-label={item.label}
+                          onClick={() => {
+                            if (isTool) {
+                              setActiveTool(item.key);
+                              setActiveToolGroup(openToolGroup);
+                              setOpenToolGroup(null);
+                              return;
+                            }
+
+                            setUtilityActionRequest({
+                              type: item.key,
+                              nonce: Date.now(),
+                            });
+                            setOpenToolGroup(null);
+                          }}
+                          style={{
+                            width: "64px",
+                            height: "64px",
+                            display: "grid",
+                            justifyItems: "center",
+                            alignContent: "center",
+                            gap: "6px",
+                            padding: "6px 4px 5px",
+                            background: isActive
+                              ? "linear-gradient(180deg, rgba(88, 196, 220, 0.22), rgba(42, 108, 122, 0.32))"
+                              : "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
+                            color: isActive ? "#fff1f4" : "#dff6ff",
+                            border: isActive
+                              ? "1px solid rgba(143, 223, 243, 0.48)"
+                              : "1px solid rgba(88, 196, 220, 0.2)",
+                            borderRadius: "10px",
+                            cursor: "pointer",
+                            boxShadow: isActive
+                              ? "0 12px 28px rgba(88, 196, 220, 0.18)"
+                              : "none",
+                            textAlign: "center",
+                          }}
+                        >
+                          <ToolbarGlyph item={item.key} />
+                          <span
+                            style={{
+                              maxWidth: "52px",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              fontSize: "10px",
+                              lineHeight: 1,
+                              color: isActive ? "#f4fbff" : "#cfe5ef",
+                            }}
+                          >
+                            {item.label}
+                          </span>
+                        </button>
+
+                        {hoveredToolbarItem === itemId ? (
+                          <div
+                            style={{
+                              position: "absolute",
+                              left: "50%",
+                              bottom: "calc(100% + 10px)",
+                              transform: "translateX(-50%)",
+                              pointerEvents: "none",
+                              zIndex: 4,
+                              padding: "8px 10px",
+                              borderRadius: "10px",
+                              border:
+                                "1px solid rgba(255, 255, 255, 0.08)",
+                              background:
+                                "linear-gradient(180deg, rgba(19, 24, 37, 0.98), rgba(8, 12, 20, 0.98))",
+                              color: "#eff7fb",
+                              fontSize: "12px",
+                              whiteSpace: "nowrap",
+                              boxShadow: "0 16px 40px rgba(0, 0, 0, 0.34)",
+                            }}
+                          >
+                            {item.label}
+                            <div
+                              style={{
+                                position: "absolute",
+                                left: "50%",
+                                top: "100%",
+                                width: "10px",
+                                height: "10px",
+                                background: "rgba(8, 12, 20, 0.98)",
+                                borderRight:
+                                  "1px solid rgba(255, 255, 255, 0.08)",
+                                borderBottom:
+                                  "1px solid rgba(255, 255, 255, 0.08)",
+                                transform:
+                                  "translate(-50%, -50%) rotate(45deg)",
+                              }}
+                            />
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  },
+                )}
+              </div>
+            </div>
+          ) : null}
+
+        </div>
+      </section>
+
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: isCompactLayout
-            ? "minmax(0, 1fr)"
-            : "clamp(236px, 18vw, 288px) minmax(0, 1fr)",
-          gap: "12px",
+          gridTemplateColumns: "minmax(0, 1fr)",
+          gap: "10px",
           alignItems: "start",
           flex: 1,
           minHeight: viewerShellMinHeight,
@@ -481,35 +992,39 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
         <aside
           style={{
             ...panelStyle,
-            padding: "14px",
+            padding: isCompactLayout ? "10px" : "12px",
             display: "flex",
             flexDirection: "column",
             minWidth: 0,
             width: "100%",
-            maxHeight: isCompactLayout ? "none" : viewerShellMinHeight,
-            overflow: isCompactLayout ? "visible" : "auto",
-            position: isCompactLayout ? "relative" : "sticky",
-            top: isCompactLayout ? "auto" : "12px",
-            alignSelf: isCompactLayout ? "stretch" : "flex-start",
+            overflow: "hidden",
+            position: "relative",
+            alignSelf: "stretch",
           }}
         >
           <h2
             style={{
               marginTop: 0,
-              marginBottom: "10px",
+              marginBottom: "8px",
               color: "#f3f7fb",
-              fontSize: "24px",
+              fontSize: isCompactLayout ? "18px" : "20px",
             }}
           >
             Series
           </h2>
           <div
             style={{
-              display: isCompactLayout ? "flex" : "grid",
-              gap: "10px",
-              overflowX: isCompactLayout ? "auto" : "visible",
-              gridTemplateColumns: isCompactLayout ? undefined : "1fr",
-              paddingBottom: isCompactLayout ? "6px" : 0,
+              display: "grid",
+              gridAutoFlow: "column",
+              gridAutoColumns: isCompactLayout
+                ? "minmax(152px, 168px)"
+                : "minmax(168px, 184px)",
+              gap: isCompactLayout ? "8px" : "9px",
+              overflowX: "auto",
+              paddingBottom: "2px",
+              alignItems: "stretch",
+              scrollbarWidth: "thin",
+              scrollSnapType: "x proximity",
             }}
           >
             {study.series.length > 0 ? (
@@ -520,9 +1035,8 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                   <div
                     key={series.id}
                     style={{
-                      flex: isCompactLayout ? "0 0 220px" : undefined,
-                      padding: "10px",
-                      borderRadius: "14px",
+                      padding: isCompactLayout ? "7px" : "8px",
+                      borderRadius: isCompactLayout ? "12px" : "14px",
                       background: isSelectedSeries
                         ? "linear-gradient(180deg, rgba(88, 196, 220, 0.18), rgba(66, 176, 230, 0.12))"
                         : "linear-gradient(180deg, rgba(18, 34, 54, 0.96), rgba(12, 24, 40, 0.98))",
@@ -532,6 +1046,7 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                       boxShadow: isSelectedSeries
                         ? "0 12px 28px rgba(88, 196, 220, 0.14)"
                         : "inset 0 1px 0 rgba(255, 255, 255, 0.02)",
+                      scrollSnapAlign: "start",
                     }}
                   >
                     <button
@@ -547,38 +1062,37 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
                         cursor: "pointer",
                       }}
                     >
-                      <div
-                        style={{
-                          height: "72px",
-                          borderRadius: "12px",
-                          marginBottom: "10px",
-                          border: "1px solid rgba(126, 224, 161, 0.14)",
-                          background:
-                            "radial-gradient(circle at center, rgba(88, 196, 220, 0.22), transparent 56%), linear-gradient(180deg, rgba(5, 10, 18, 0.96), rgba(9, 19, 31, 0.98))",
-                          display: "grid",
-                          placeItems: "center",
-                          color: "#8fdff3",
-                          fontSize: "11px",
-                          letterSpacing: "0.08em",
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        Series Preview
-                      </div>
+                      <SeriesThumbnail
+                        seriesId={series.id}
+                        imageUrl={series.instances[0]?.imageUrl}
+                        compact={isCompactLayout}
+                      />
                       <strong>
-                        <span style={{ color: "#f3f7fb" }}>
+                        <span
+                          style={{
+                            color: "#f3f7fb",
+                            fontSize: isCompactLayout ? "12px" : "13px",
+                          }}
+                        >
                           {series.seriesNumber ?? "-"} |{" "}
                           {series.modality ?? "N/A"}
                         </span>
                       </strong>
-                      <p style={{ margin: "6px 0 0", color: "#d7e3ea", fontSize: "14px" }}>
+                      <p
+                        style={{
+                          margin: "5px 0 0",
+                          color: "#d7e3ea",
+                          fontSize: isCompactLayout ? "12px" : "13px",
+                          lineHeight: 1.35,
+                        }}
+                      >
                         {series.description ?? "Untitled Series"}
                       </p>
                       <p
                         style={{
-                          margin: "6px 0 0",
+                          margin: "4px 0 0",
                           color: "#7fb8ca",
-                          fontSize: "13px",
+                          fontSize: isCompactLayout ? "11px" : "12px",
                         }}
                       >
                         {series.instanceCount} instances
@@ -607,576 +1121,15 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
         <section
           style={{
             display: "grid",
-            gap: "12px",
+            gridTemplateRows: "minmax(0, 1fr)",
+            gap: "0",
             minWidth: 0,
             minHeight: viewerShellMinHeight,
-            alignContent: "start",
+            height: isCompactLayout ? "auto" : viewerShellMinHeight,
             width: "100%",
             justifyItems: "stretch",
           }}
         >
-          <div
-            style={{
-              ...panelStyle,
-              padding: "8px 12px 10px",
-              width: "100%",
-              position: "relative",
-              zIndex: 8,
-              overflow: "visible",
-            }}
-          >
-            <div
-              style={{
-                display: "grid",
-                gap: "10px",
-                position: "relative",
-                overflow: "visible",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  gap: "8px",
-                  flexWrap: "wrap",
-                  alignItems: "center",
-                  overflowX: "visible",
-                  paddingBottom: "2px",
-                }}
-              >
-                {TOOL_GROUPS.map((group) => {
-                  const isActiveGroup = activeToolGroup === group.key;
-                  const isOpen = openToolGroup === group.key;
-
-                  return (
-                    <button
-                      key={group.key}
-                      type="button"
-                      onClick={() => {
-                        setActiveToolGroup(group.key);
-                        setOpenToolGroup((currentGroup) =>
-                          currentGroup === group.key ? null : group.key,
-                        );
-
-                        const firstTool = group.items.find(
-                          (item) => item.kind === "tool",
-                        );
-
-                        if (
-                          firstTool &&
-                          !group.items.some(
-                            (item) =>
-                              item.kind === "tool" && item.key === activeTool,
-                          )
-                        ) {
-                          setActiveTool(firstTool.key);
-                        }
-                      }}
-                      style={{
-                        background:
-                          isActiveGroup || isOpen
-                            ? "linear-gradient(180deg, rgba(88, 196, 220, 0.2), rgba(42, 108, 122, 0.28))"
-                            : "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
-                        color:
-                          isActiveGroup || isOpen ? "#f3fffb" : "#a7cad8",
-                        border:
-                          isActiveGroup || isOpen
-                            ? "1px solid rgba(143, 223, 243, 0.42)"
-                            : "1px solid rgba(88, 196, 220, 0.16)",
-                        width: "58px",
-                        minWidth: "58px",
-                        height: "58px",
-                        borderRadius: "10px",
-                        cursor: "pointer",
-                        fontSize: "10px",
-                        display: "grid",
-                        justifyItems: "center",
-                        alignContent: "center",
-                        gap: "4px",
-                        flexShrink: 0,
-                        position: "relative",
-                        boxShadow:
-                          isActiveGroup || isOpen
-                            ? "0 10px 22px rgba(88, 196, 220, 0.16)"
-                            : "none",
-                      }}
-                    >
-                      <span
-                        style={{
-                          color:
-                            isActiveGroup || isOpen ? "#f3fffb" : "#dff6ff",
-                        }}
-                      >
-                        <ToolGroupIcon group={group.key} />
-                      </span>
-                        <span
-                        style={{
-                          maxWidth: "42px",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          lineHeight: 1,
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "3px",
-                        }}
-                      >
-                          <span
-                            style={{
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {group.label}
-                          </span>
-                          <span
-                            style={{
-                              fontSize: "9px",
-                              transform: isOpen
-                                ? "rotate(180deg)"
-                                : "rotate(0deg)",
-                              transition: "transform 160ms ease",
-                              color: "#8fdff3",
-                              flexShrink: 0,
-                            }}
-                          >
-                            ▼
-                          </span>
-                        </span>
-                    </button>
-                  );
-                })}
-
-                <div
-                  style={{
-                    marginLeft: "auto",
-                    padding: "0 4px 0 8px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    color: "#8ea3b7",
-                    fontSize: "12px",
-                    whiteSpace: "nowrap",
-                    flexShrink: 0,
-                  }}
-                >
-                  <Link
-                    href="/worklist"
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      padding: "6px 10px",
-                      borderRadius: "999px",
-                      textDecoration: "none",
-                      color: "#dff6ff",
-                      background:
-                        "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
-                      border: "1px solid rgba(88, 196, 220, 0.16)",
-                      fontSize: "11px",
-                    }}
-                  >
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M6 3L1.5 8 6 13" />
-                      <path d="M2 8h12" />
-                    </svg>
-                    Worklist
-                  </Link>
-                  {(
-                    [
-                      { key: "metadata", label: "Study" },
-                      { key: "reports", label: "Report" },
-                    ] as const
-                  ).map((panel) => {
-                    const isOpen = openOverlayPanel === panel.key;
-
-                    return (
-                      <button
-                        key={panel.key}
-                        type="button"
-                        onClick={() =>
-                          setOpenOverlayPanel((current) =>
-                            current === panel.key ? null : panel.key,
-                          )
-                        }
-                        style={{
-                          borderRadius: "999px",
-                          border: isOpen
-                            ? "1px solid rgba(143, 223, 243, 0.42)"
-                            : "1px solid rgba(88, 196, 220, 0.16)",
-                          background: isOpen
-                            ? "linear-gradient(180deg, rgba(88, 196, 220, 0.18), rgba(42, 108, 122, 0.28))"
-                            : "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
-                          color: "#dff6ff",
-                          fontSize: "11px",
-                          padding: "6px 10px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        {panel.label}
-                      </button>
-                    );
-                  })}
-                  Active:{" "}
-                  <span style={{ color: "#dff6ff", marginLeft: "6px" }}>
-                    {activeTool ? TOOL_LABELS[activeTool] : "Idle"}
-                  </span>
-                </div>
-              </div>
-
-              {openToolGroup ? (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "calc(100% + 4px)",
-                    left: 0,
-                    zIndex: 30,
-                    borderRadius: "14px",
-                    border: "1px solid rgba(88, 196, 220, 0.16)",
-                    background:
-                      "linear-gradient(180deg, rgba(15, 21, 33, 0.98), rgba(10, 18, 30, 0.98))",
-                    padding: "10px",
-                    display: "grid",
-                    gap: "10px",
-                    boxShadow: "0 24px 60px rgba(0, 0, 0, 0.42)",
-                    width: "fit-content",
-                    maxWidth: "min(320px, calc(100vw - 40px))",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: "12px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        color: "#cdebf5",
-                        fontSize: "11px",
-                        letterSpacing: "0.08em",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      <ToolGroupIcon group={openToolGroup} />
-                      {openToolGroup}
-                    </div>
-                    <div style={{ color: "#6f8594", fontSize: "10px" }}>
-                      {GROUP_DESCRIPTIONS[openToolGroup]}
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      display: "grid",
-                      gap: "6px",
-                      gridTemplateColumns: getToolbarGridColumns(
-                        TOOL_GROUPS.find((group) => group.key === openToolGroup)
-                          ?.items.length ?? 0,
-                      ),
-                    }}
-                  >
-                    {TOOL_GROUPS.find((group) => group.key === openToolGroup)?.items.map(
-                      (item) => {
-                        const isTool = item.kind === "tool";
-                        const isActive =
-                          isTool && activeTool === item.key;
-                        const itemId = `${openToolGroup}-${item.key}`;
-
-                        return (
-                          <div
-                            key={item.key}
-                            style={{
-                              position: "relative",
-                              display: "grid",
-                            }}
-                            onMouseEnter={() => setHoveredToolbarItem(itemId)}
-                            onMouseLeave={() => setHoveredToolbarItem(null)}
-                          >
-                            <button
-                              type="button"
-                              aria-label={item.label}
-                          onClick={() => {
-                                if (isTool) {
-                                  setActiveTool(item.key);
-                                  setActiveToolGroup(openToolGroup);
-                                  return;
-                                }
-
-                                setUtilityActionRequest({
-                                  type: item.key,
-                                  nonce: Date.now(),
-                                });
-                              }}
-                              style={{
-                                width: "64px",
-                                height: "64px",
-                                display: "grid",
-                                justifyItems: "center",
-                                alignContent: "center",
-                                gap: "6px",
-                                padding: "6px 4px 5px",
-                                background: isActive
-                                  ? "linear-gradient(180deg, rgba(88, 196, 220, 0.22), rgba(42, 108, 122, 0.32))"
-                                  : "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
-                                color: isActive ? "#fff1f4" : "#dff6ff",
-                                border: isActive
-                                  ? "1px solid rgba(143, 223, 243, 0.48)"
-                                  : "1px solid rgba(88, 196, 220, 0.2)",
-                                borderRadius: "10px",
-                                cursor: "pointer",
-                                boxShadow: isActive
-                                  ? "0 12px 28px rgba(88, 196, 220, 0.18)"
-                                  : "none",
-                                textAlign: "center",
-                              }}
-                            >
-                              <ToolbarGlyph item={item.key} />
-                              <span
-                                style={{
-                                  maxWidth: "52px",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                  whiteSpace: "nowrap",
-                                  fontSize: "10px",
-                                  lineHeight: 1,
-                                  color: isActive ? "#f4fbff" : "#cfe5ef",
-                                }}
-                              >
-                                {item.label}
-                              </span>
-                            </button>
-
-                            {hoveredToolbarItem === itemId ? (
-                              <div
-                                style={{
-                                  position: "absolute",
-                                  left: "50%",
-                                  bottom: "calc(100% + 10px)",
-                                  transform: "translateX(-50%)",
-                                  pointerEvents: "none",
-                                  zIndex: 4,
-                                  padding: "8px 10px",
-                                  borderRadius: "10px",
-                                  border:
-                                    "1px solid rgba(255, 255, 255, 0.08)",
-                                  background:
-                                    "linear-gradient(180deg, rgba(19, 24, 37, 0.98), rgba(8, 12, 20, 0.98))",
-                                  color: "#eff7fb",
-                                  fontSize: "12px",
-                                  whiteSpace: "nowrap",
-                                  boxShadow: "0 16px 40px rgba(0, 0, 0, 0.34)",
-                                }}
-                                >
-                                  {item.label}
-                                  <div
-                                    style={{
-                                      position: "absolute",
-                                      left: "50%",
-                                      top: "100%",
-                                      width: "10px",
-                                      height: "10px",
-                                      background: "rgba(8, 12, 20, 0.98)",
-                                      borderRight:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
-                                      borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
-                                      transform:
-                                        "translate(-50%, -50%) rotate(45deg)",
-                                    }}
-                                  />
-                                </div>
-                            ) : null}
-                          </div>
-                        );
-                      },
-                    )}
-                  </div>
-                </div>
-              ) : null}
-
-              {openOverlayPanel ? (
-                <div
-                  onClick={() => setOpenOverlayPanel(null)}
-                  style={{
-                    position: "fixed",
-                    inset: 0,
-                    zIndex: 40,
-                    background: "rgba(2, 6, 16, 0.46)",
-                    display: "grid",
-                    placeItems: "center",
-                    padding: "24px",
-                  }}
-                >
-                  <div
-                    onClick={(event) => event.stopPropagation()}
-                    style={{
-                      width: "min(720px, calc(100vw - 32px))",
-                      maxHeight: "min(72dvh, 760px)",
-                      overflow: "auto",
-                      borderRadius: "22px",
-                      border: "1px solid rgba(88, 196, 220, 0.18)",
-                      background:
-                        "linear-gradient(180deg, rgba(14, 27, 43, 0.98), rgba(9, 19, 31, 0.99))",
-                      boxShadow: "0 32px 80px rgba(2, 6, 16, 0.52)",
-                      padding: "18px",
-                      display: "grid",
-                      gap: "14px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        gap: "12px",
-                      }}
-                    >
-                      <div>
-                        <p
-                          style={{
-                            margin: 0,
-                            color: "#8fdff3",
-                            fontSize: "11px",
-                            letterSpacing: "0.1em",
-                            textTransform: "uppercase",
-                          }}
-                        >
-                          Viewer Panel
-                        </p>
-                        <h3
-                          style={{
-                            margin: "6px 0 0",
-                            color: "#f3f7fb",
-                            fontSize: "22px",
-                          }}
-                        >
-                          {openOverlayPanel === "metadata"
-                            ? "Study Metadata"
-                            : "Reports"}
-                        </h3>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setOpenOverlayPanel(null)}
-                        style={{
-                          width: "34px",
-                          height: "34px",
-                          borderRadius: "999px",
-                          border: "1px solid rgba(88, 196, 220, 0.16)",
-                          background:
-                            "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
-                          color: "#dff6ff",
-                          cursor: "pointer",
-                          fontSize: "16px",
-                        }}
-                      >
-                        ×
-                      </button>
-                    </div>
-
-                    {openOverlayPanel === "metadata" ? (
-                      <div
-                        style={{
-                          display: "grid",
-                          gap: "10px",
-                        }}
-                      >
-                        {[
-                          `Study Date: ${study.studyDate ?? "N/A"}`,
-                          `Received At: ${study.receivedAt}`,
-                          `Series Count: ${study.series.length}`,
-                          `Selected Series UID: ${selectedSeries?.seriesInstanceUid ?? "N/A"}`,
-                          `Accession Number: ${study.accessionNumber ?? "UNKNOWN"}`,
-                          `Status: ${study.status}`,
-                        ].map((value) => (
-                          <div
-                            key={value}
-                            style={{
-                              padding: "12px 14px",
-                              borderRadius: "16px",
-                              background:
-                                "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
-                              border: "1px solid rgba(88, 196, 220, 0.14)",
-                              color: "#d7ecf6",
-                              fontSize: "14px",
-                              lineHeight: 1.45,
-                            }}
-                          >
-                            {value}
-                          </div>
-                        ))}
-                      </div>
-                    ) : study.reports.length > 0 ? (
-                      <div style={{ display: "grid", gap: "12px" }}>
-                        {study.reports.map((report) => (
-                          <div
-                            key={report.id}
-                            style={{
-                              padding: "14px",
-                              borderRadius: "18px",
-                              background:
-                                "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
-                              border: "1px solid rgba(88, 196, 220, 0.14)",
-                            }}
-                          >
-                            <p
-                              style={{
-                                margin: "0 0 10px",
-                                color: "#d7ecf6",
-                                fontSize: "14px",
-                              }}
-                            >
-                              Status: {report.status}
-                            </p>
-                            <pre
-                              style={{
-                                whiteSpace: "pre-wrap",
-                                color: "#8fbccc",
-                                margin: 0,
-                                overflow: "auto",
-                                fontSize: "12px",
-                                lineHeight: 1.5,
-                              }}
-                            >
-                              {JSON.stringify(report.content, null, 2)}
-                            </pre>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div
-                        style={{
-                          padding: "16px",
-                          borderRadius: "16px",
-                          background:
-                            "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
-                          border: "1px solid rgba(88, 196, 220, 0.14)",
-                          color: "#d7ecf6",
-                        }}
-                      >
-                        No reports yet
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          </div>
-
           <DicomViewport
             imageUrl={selectedInstance?.imageUrl}
             stackImageUrls={selectedSeriesImageUrls}
@@ -1192,6 +1145,7 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
             studyStatus={study.status}
             activeTool={activeTool}
             utilityActionRequest={utilityActionRequest}
+            isCompactLayout={isCompactLayout}
             onImageIndexChange={handleImageIndexChange}
           />
 
@@ -1199,171 +1153,181 @@ export function StudyViewerClient({ study }: StudyViewerClientProps) {
             style={{
               display: "grid",
               gridTemplateColumns: "minmax(0, 1fr)",
-              gap: "16px",
+              gap: "0",
               minWidth: 0,
               width: "100%",
             }}
-          >
-            <section
-              style={{
-                ...panelStyle,
-                padding: "12px",
-                minWidth: 0,
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: "12px",
-                  marginBottom: isFilmstripCollapsed ? 0 : "8px",
-                  flexWrap: "wrap",
-                }}
-              >
-                <div>
-                  <h2
-                    style={{
-                      margin: 0,
-                      fontSize: "16px",
-                      color: "#f3f7fb",
-                    }}
-                  >
-                    Images
-                  </h2>
-                  <p
-                    style={{
-                      margin: "4px 0 0",
-                      color: "#8fdff3",
-                      fontSize: "12px",
-                      letterSpacing: "0.04em",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Filmstrip
-                  </p>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    flexWrap: "wrap",
-                    justifyContent: "flex-end",
-                  }}
-                >
-                  <p style={{ margin: 0, color: "#d7ecf6", fontSize: "13px" }}>
-                    {selectedInstances.length > 0
-                      ? `${currentImageIndex + 1} / ${selectedInstances.length}`
-                      : "0 / 0"}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setIsFilmstripCollapsed((collapsed) => !collapsed)
-                    }
-                    style={{
-                      border: "1px solid rgba(88, 196, 220, 0.18)",
-                      background:
-                        "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
-                      color: "#dff6ff",
-                      borderRadius: "999px",
-                      padding: "7px 10px",
-                      fontSize: "12px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {isFilmstripCollapsed ? "Show Strip" : "Hide Strip"}
-                  </button>
-                </div>
-              </div>
-              {!isFilmstripCollapsed ? (
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "8px",
-                    overflowX: "auto",
-                    paddingBottom: "2px",
-                    scrollbarWidth: "thin",
-                    scrollSnapType: "x proximity",
-                    alignItems: "stretch",
-                  }}
-                >
-                  {selectedInstances.map((instance, index) => {
-                    const isSelectedInstance =
-                      instance.id === selectedInstance?.id;
-
-                    return (
-                      <button
-                        key={instance.id}
-                        type="button"
-                        onClick={() => setSelectedInstanceId(instance.id)}
-                        style={{
-                          flex: isCompactLayout ? "0 0 72px" : "0 0 84px",
-                          minHeight: isCompactLayout ? "64px" : "72px",
-                          padding: "6px",
-                          borderRadius: "14px",
-                          border: isSelectedInstance
-                            ? "1px solid rgba(126, 224, 161, 0.7)"
-                            : "1px solid rgba(88, 196, 220, 0.16)",
-                          background: isSelectedInstance
-                            ? "linear-gradient(180deg, rgba(88, 196, 220, 0.2), rgba(66, 176, 230, 0.12))"
-                            : "linear-gradient(180deg, rgba(18, 34, 54, 0.96), rgba(12, 24, 40, 0.98))",
-                          color: "#d7e3ea",
-                          textAlign: "left",
-                          cursor: "pointer",
-                          scrollSnapAlign: "start",
-                        }}
-                      >
-                        <div
-                          style={{
-                            height: isCompactLayout ? "22px" : "26px",
-                            borderRadius: "8px",
-                            marginBottom: "5px",
-                            background:
-                              "radial-gradient(circle at center, rgba(88, 196, 220, 0.16), transparent 52%), linear-gradient(180deg, rgba(9, 19, 31, 1), rgba(5, 10, 18, 0.98))",
-                            border: "1px solid rgba(88, 196, 220, 0.1)",
-                            display: "grid",
-                            placeItems: "center",
-                          }}
-                        >
-                          <span
-                            style={{
-                              color: "#8fdff3",
-                              fontSize: "11px",
-                              letterSpacing: "0.08em",
-                              textTransform: "uppercase",
-                            }}
-                          >
-                            {String(index + 1).padStart(2, "0")}
-                          </span>
-                        </div>
-                        <div
-                          style={{
-                            fontSize: isCompactLayout ? "9px" : "10px",
-                            fontWeight: 700,
-                          }}
-                        >
-                          Image {instance.instanceNumber ?? index + 1}
-                        </div>
-                        <div
-                          style={{
-                            marginTop: "2px",
-                            color: "#7fb8ca",
-                            fontSize: "9px",
-                          }}
-                        >
-                          {isSelectedInstance ? "Current Slice" : "Tap To View"}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : null}
-            </section>
-          </div>
+          />
         </section>
       </div>
+
+      {openOverlayPanel ? (
+        <div
+          onClick={() => setOpenOverlayPanel(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 40,
+            background: "rgba(2, 6, 16, 0.46)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "24px",
+          }}
+        >
+          <div
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              width: "min(720px, calc(100vw - 32px))",
+              maxHeight: "min(72dvh, 760px)",
+              overflow: "auto",
+              borderRadius: "22px",
+              border: "1px solid rgba(88, 196, 220, 0.18)",
+              background:
+                "linear-gradient(180deg, rgba(14, 27, 43, 0.98), rgba(9, 19, 31, 0.99))",
+              boxShadow: "0 32px 80px rgba(2, 6, 16, 0.52)",
+              padding: "18px",
+              display: "grid",
+              gap: "14px",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "12px",
+              }}
+            >
+              <div>
+                <p
+                  style={{
+                    margin: 0,
+                    color: "#8fdff3",
+                    fontSize: "11px",
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Viewer Panel
+                </p>
+                <h3
+                  style={{
+                    margin: "6px 0 0",
+                    color: "#f3f7fb",
+                    fontSize: "22px",
+                  }}
+                >
+                  {openOverlayPanel === "metadata"
+                    ? "Study Metadata"
+                    : "Reports"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpenOverlayPanel(null)}
+                style={{
+                  width: "34px",
+                  height: "34px",
+                  borderRadius: "999px",
+                  border: "1px solid rgba(88, 196, 220, 0.16)",
+                  background:
+                    "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
+                  color: "#dff6ff",
+                  cursor: "pointer",
+                  fontSize: "16px",
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {openOverlayPanel === "metadata" ? (
+              <div
+                style={{
+                  display: "grid",
+                  gap: "10px",
+                }}
+              >
+                {[
+                  `Study Date: ${study.studyDate ?? "N/A"}`,
+                  `Received At: ${study.receivedAt}`,
+                  `Series Count: ${study.series.length}`,
+                  `Selected Series UID: ${selectedSeries?.seriesInstanceUid ?? "N/A"}`,
+                  `Accession Number: ${study.accessionNumber ?? "UNKNOWN"}`,
+                  `Status: ${study.status}`,
+                ].map((value) => (
+                  <div
+                    key={value}
+                    style={{
+                      padding: "12px 14px",
+                      borderRadius: "16px",
+                      background:
+                        "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
+                      border: "1px solid rgba(88, 196, 220, 0.14)",
+                      color: "#d7ecf6",
+                      fontSize: "14px",
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    {value}
+                  </div>
+                ))}
+              </div>
+            ) : study.reports.length > 0 ? (
+              <div style={{ display: "grid", gap: "12px" }}>
+                {study.reports.map((report) => (
+                  <div
+                    key={report.id}
+                    style={{
+                      padding: "14px",
+                      borderRadius: "18px",
+                      background:
+                        "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
+                      border: "1px solid rgba(88, 196, 220, 0.14)",
+                    }}
+                  >
+                    <p
+                      style={{
+                        margin: "0 0 10px",
+                        color: "#d7ecf6",
+                        fontSize: "14px",
+                      }}
+                    >
+                      Status: {report.status}
+                    </p>
+                    <pre
+                      style={{
+                        whiteSpace: "pre-wrap",
+                        color: "#8fbccc",
+                        margin: 0,
+                        overflow: "auto",
+                        fontSize: "12px",
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {JSON.stringify(report.content, null, 2)}
+                    </pre>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div
+                style={{
+                  padding: "16px",
+                  borderRadius: "16px",
+                  background:
+                    "linear-gradient(180deg, rgba(18, 34, 54, 0.92), rgba(12, 24, 40, 0.98))",
+                  border: "1px solid rgba(88, 196, 220, 0.14)",
+                  color: "#d7ecf6",
+                }}
+              >
+                No reports yet
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

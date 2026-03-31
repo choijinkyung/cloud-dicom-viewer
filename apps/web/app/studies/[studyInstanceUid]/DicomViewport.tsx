@@ -48,6 +48,7 @@ interface DicomViewportProps {
     type: ViewerUtilityAction;
     nonce: number;
   } | null;
+  isCompactLayout?: boolean;
   onImageIndexChange?: (nextIndex: number) => void;
 }
 
@@ -66,6 +67,7 @@ export function DicomViewport({
   studyStatus,
   activeTool,
   utilityActionRequest,
+  isCompactLayout = false,
   onImageIndexChange,
 }: DicomViewportProps) {
   const isDemoMode = stackImageUrls.length === 0;
@@ -795,12 +797,14 @@ export function DicomViewport({
       ref={viewportRef}
       style={{
         flex: 1,
+        alignSelf: "stretch",
         width: "100%",
         maxWidth: "100%",
-        aspectRatio: "16 / 10",
-        minHeight: "clamp(260px, 32dvh, 420px)",
-        height: "auto",
-        maxHeight: "calc(100dvh - 340px)",
+        minHeight: isCompactLayout
+          ? "clamp(360px, 58dvh, 680px)"
+          : "100%",
+        height: isCompactLayout ? "clamp(360px, 58dvh, 680px)" : "100%",
+        maxHeight: isCompactLayout ? "clamp(360px, 58dvh, 680px)" : "100%",
         margin: 0,
         borderRadius: "20px",
         border: "1px solid rgba(143, 223, 243, 0.18)",
